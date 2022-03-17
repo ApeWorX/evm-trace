@@ -1,0 +1,87 @@
+on: ["push", "pull_request"]
+
+name: Test
+
+jobs:
+    linting:
+        runs-on: ubuntu-latest
+
+        steps:
+        - uses: actions/checkout@v2
+
+        - name: Setup Python
+          uses: actions/setup-python@v2
+          with:
+              python-version: 3.8
+
+        - name: Install Dependencies
+          run: pip install .[lint]
+
+        - name: Run Black
+          run: black --check .
+
+        - name: Run flake8
+          run: flake8 .
+
+        - name: Run isort
+          run: isort --check-only .
+
+    type-check:
+        runs-on: ubuntu-latest
+
+        steps:
+        - uses: actions/checkout@v2
+
+        - name: Setup Python
+          uses: actions/setup-python@v2
+          with:
+              python-version: 3.8
+
+        - name: Install Dependencies
+          run: pip install .[lint,test]  # Might need test deps
+
+        - name: Run MyPy
+          run: mypy .
+
+    functional:
+        runs-on: ${{ matrix.os }}
+
+        strategy:
+            matrix:
+                os: [ubuntu-latest, macos-latest]   # eventually add `windows-latest`
+                python-version: [3.7, 3.8, 3.9]
+
+        steps:
+        - uses: actions/checkout@v2
+
+        - name: Setup Python
+          uses: actions/setup-python@v2
+          with:
+              python-version: ${{ matrix.python-version }}
+
+        - name: Install Dependencies
+          run: pip install .[test]
+
+        - name: Run Tests
+          run: pytest -m "not fuzzing" -n 0 -s --cov
+
+# NOTE: uncomment this block after you've marked tests with @pytest.mark.fuzzing
+#    fuzzing:
+#        runs-on: ubuntu-latest
+#
+#        strategy:
+#            fail-fast: true
+#
+#        steps:
+#        - uses: actions/checkout@v2
+#
+#        - name: Setup Python
+#          uses: actions/setup-python@v2
+#          with:
+#              python-version: 3.8
+#
+#        - name: Install Dependencies
+#          run: pip install .[test]
+#
+#        - name: Run Tests
+#          run: pytest -m "fuzzing" --no-cov -s
