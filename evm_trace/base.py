@@ -1,5 +1,6 @@
+import math
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterator, List
 
 from hexbytes import HexBytes
 from pydantic import BaseModel, Field, ValidationError, validator
@@ -43,6 +44,7 @@ class CallTreeNode(BaseModel):
     call_type: CallType
     address: Any
     value: int = 0
+    depth: int = 0
     gas_limit: int
     gas_cost: int  # calculated from call starting and return
     calldata: Any = HexBytes(b"")
@@ -54,3 +56,121 @@ class CallTreeNode(BaseModel):
     @validator("address", "calldata", "returndata", pre=True)
     def validate_hexbytes(cls, v) -> HexBytes:
         return _convert_hexbytes(cls, v)
+
+
+def get_calltree_from_trace(
+    trace: Iterator[TraceFrame], show_internal=False, **root_node_kwargs
+) -> CallTreeNode:
+    """
+    Creates a CallTreeNode from a given transaction trace.
+
+    Args:
+        trace (Iterator[TraceFrame]): Iterator of transaction trace frames.
+        show_internal (bool): Boolean whether to display internal calls. Defaulted to False.
+        root_node_kwargs (dict): Keyword argments passed to the root ``CallTreeNode``.
+
+    Returns:
+        CallTreeNode: Call tree of transaction trace.
+    """
+
+    return _create_node_from_call(
+        trace=trace,
+        show_internal=show_internal,
+        **root_node_kwargs,
+    )
+
+
+def _extract_memory(offset: HexBytes, size: HexBytes, memory: List[HexBytes]) -> HexBytes:
+    """
+    Extracts memory from the EVM stack.
+
+    Args:
+        offset (HexBytes): Offset byte location in memory.
+        size (HexBytes): Number of bytes to return.
+        memory (List[HexBytes]): Memory stack.
+
+    Returns:
+        HexBytes: Byte value from memory stack.
+    """
+
+    size_int = int(size.hex(), 16)
+
+    if size_int == 0:
+        return HexBytes(b"")
+
+    offset_int = int(offset.hex(), 16)
+
+    # Compute the word that contains the first byte
+    start_word = math.floor(offset_int / 32)
+    # Compute the word that contains the last byte
+    stop_word = math.ceil((offset_int + size_int) / 32)
+
+    byte_slice = b""
+
+    for word in memory[start_word:stop_word]:
+        byte_slice += word
+
+    return HexBytes(byte_slice[(offset_int % 32) : size_int])  # noqa: E203
+
+
+def _create_node_from_call(
+    trace: Iterator[TraceFrame], show_internal: bool = False, **node_kwargs
+) -> CallTreeNode:
+
+    if show_internal:
+        raise NotImplementedError()
+
+    node = CallTreeNode(**node_kwargs)
+
+    for frame in trace:
+        if frame.op in ("CALL", "DELEGATECALL", "STATICCALL"):
+            assert len(frame.stack) > 6
+            child_node_kwargs = {}
+
+            child_node_kwargs["address"] = frame.stack[-2][-20:]  # address is 20 bytes in EVM
+            child_node_kwargs["depth"] = frame.depth
+            # TODO: Validate gas values
+            child_node_kwargs["gas_limit"] = int(frame.stack[-1].hex(), 16)
+            child_node_kwargs["gas_cost"] = frame.gas_cost
+
+            if frame.op == "CALL":
+                child_node_kwargs["call_type"] = CallType.MUTABLE
+                child_node_kwargs["value"] = int(frame.stack[-3].hex(), 16)
+                child_node_kwargs["calldata"] = _extract_memory(
+                    offset=frame.stack[-4], size=frame.stack[-5], memory=frame.memory
+                )
+            elif frame.op == "DELEGATECALL":
+                child_node_kwargs["call_type"] = CallType.DELEGATE
+                child_node_kwargs["calldata"] = _extract_memory(
+                    offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
+                )
+            else:
+                child_node_kwargs["call_type"] = CallType.STATIC
+                child_node_kwargs["calldata"] = _extract_memory(
+                    offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
+                )
+
+            child_node = _create_node_from_call(trace=trace, **child_node_kwargs)
+            node.calls.append(child_node)
+
+        # TODO: Handle internal nodes using JUMP and JUMPI
+
+        elif frame.op in ("SELFDESTRUCT", "STOP"):
+            # TODO: Handle the internal value transfer in SELFDESTRUCT
+            # TODO: Handle "execution halted" vs. gas limit reached
+            node.selfdestruct = frame.op == "SELFDESTRUCT"
+            break
+
+        elif frame.op in ("RETURN", "REVERT"):
+            node.returndata = _extract_memory(
+                offset=frame.stack[-1], size=frame.stack[-2], memory=frame.memory
+            )
+            # TODO: Handle "execution halted" vs. gas limit reached
+            node.failed = frame.op == "REVERT"
+            break
+
+        # TODO: Handle invalid opcodes (`node.failed = True`)
+        # NOTE: ignore other opcodes
+
+    # TODO: Handle "execution halted" vs. gas limit reached
+    return node
