@@ -56,6 +56,7 @@ setup(
         "importlib-metadata ; python_version<'3.8'",
         "pydantic>=1.9.0,<2.0",
         "hexbytes>=0.2.2,<1.0.0",
+        "eth-utils==1.10.0",
     ],  # NOTE: Add 3rd party libraries here
     python_requires=">=3.7.2,<4",
     extras_require=extras_require,

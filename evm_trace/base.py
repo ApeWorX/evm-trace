@@ -2,6 +2,7 @@ import math
 from enum import Enum
 from typing import Any, Dict, Iterator, List
 
+from eth_utils import to_int
 from hexbytes import HexBytes
 from pydantic import BaseModel, Field, ValidationError, validator
 
@@ -70,7 +71,7 @@ def get_calltree_from_trace(
         root_node_kwargs (dict): Keyword argments passed to the root ``CallTreeNode``.
 
     Returns:
-        CallTreeNode: Call tree of transaction trace.
+        :class:`~evm_trace.base.CallTreeNode: Call tree of transaction trace.
     """
 
     return _create_node_from_call(
@@ -93,12 +94,12 @@ def _extract_memory(offset: HexBytes, size: HexBytes, memory: List[HexBytes]) ->
         HexBytes: Byte value from memory stack.
     """
 
-    size_int = int(size.hex(), 16)
+    size_int = to_int(size)
 
     if size_int == 0:
         return HexBytes(b"")
 
-    offset_int = int(offset.hex(), 16)
+    offset_int = to_int(offset)
 
     # Compute the word that contains the first byte
     start_word = math.floor(offset_int / 32)
@@ -110,7 +111,8 @@ def _extract_memory(offset: HexBytes, size: HexBytes, memory: List[HexBytes]) ->
     for word in memory[start_word:stop_word]:
         byte_slice += word
 
-    return HexBytes(byte_slice[(offset_int % 32) : size_int])  # noqa: E203
+    offset_index = offset_int % 32
+    return HexBytes(byte_slice[offset_index:size_int])
 
 
 def _create_node_from_call(
@@ -124,7 +126,6 @@ def _create_node_from_call(
 
     for frame in trace:
         if frame.op in ("CALL", "DELEGATECALL", "STATICCALL"):
-            assert len(frame.stack) > 6
             child_node_kwargs = {}
 
             child_node_kwargs["address"] = frame.stack[-2][-20:]  # address is 20 bytes in EVM
