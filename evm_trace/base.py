@@ -118,6 +118,10 @@ def _extract_memory(offset: HexBytes, size: HexBytes, memory: List[HexBytes]) ->
 def _create_node_from_call(
     trace: Iterator[TraceFrame], show_internal: bool = False, **node_kwargs
 ) -> CallTreeNode:
+    """
+    Use specified opcodes to create a branching callnode
+    https://www.evm.codes/
+    """
 
     if show_internal:
         raise NotImplementedError()
