@@ -171,10 +171,13 @@ def _create_node_from_call(
 
         # TODO: Handle internal nodes using JUMP and JUMPI
 
-        elif frame.op in ("SELFDESTRUCT", "STOP"):
-            # TODO: Handle the internal value transfer in SELFDESTRUCT
+        elif frame.op == "SELFDESTRUCT":
+            # TODO: Handle the internal value transfer
+            node.selfdestruct = True
+            break
+
+        elif frame.op == "STOP":
             # TODO: Handle "execution halted" vs. gas limit reached
-            node.selfdestruct = frame.op == "SELFDESTRUCT"
             break
 
         elif frame.op in ("RETURN", "REVERT"):
