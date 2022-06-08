@@ -32,7 +32,14 @@ class DisplayableCallTreeNode(object):
     def title(self) -> str:
         call_type = self.call.call_type.value.upper()
         call_mnemonic = "CALL" if self.call.call_type == CallType.MUTABLE else f"{call_type}CALL"
-        address = to_checksum_address(self.call.address.hex())
+        address_hex_str = self.call.address.hex()
+
+        try:
+            address = to_checksum_address(address_hex_str)
+        except ImportError:
+            # Ignore checksumming if user does not have eth-hash backend installed.
+            address = address_hex_str
+
         cost = self.call.gas_cost
 
         call_path = str(address)
