@@ -27,8 +27,52 @@ python3 setup.py install
 ```
 
 ## Quick Usage
-```bash
-ape console --network ethereum:local:hardhat
+
+If you are using a node that supports the `debug_traceTransaction` RPC, you can use `web3.py` to get trace frames:
+
+```python
+from web3 import HTTPProvider, Web3
+from evm_trace import TraceFrame
+
+web3 = Web3(HTTPProvider("https://path.to.my.node"))
+struct_logs = web3.manager.request_blocking("debug_traceTransaction", [txn_hash]).structLogs
+for item in struct_logs:
+    yield TraceFrame(**item)
+```
+
+If you want to get the call-tree node, you can do:
+
+```python
+from evm_trace import CallType, get_calltree_from_trace
+
+root_node_kwargs = {
+    "gas_cost": 10000000,
+    "gas_limit": 10000000000,
+    "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "calldata": "0x00",
+    "value": 1000,
+    "call_type": CallType.MUTABLE,
+}
+
+# Where `trace` is a `TraceFrame` (see example above)
+calltree = get_calltree_from_trace(trace, **root_node_kwargs)
+```
+
+You can also customize the output by making your own display class:
+
+```python
+from evm_trace.display import DisplayableCallTreeNode, get_calltree_from_trace
+
+
+class CustomDisplay(DisplayableCallTreeNode):
+    def title(self) -> str:
+        call_type = self.call.call_type.value.lower().capitalize()
+        address = self.call.address.hex()
+        cost = self.call.gas_cost
+        return f"{call_type} call @ {address} gas_cost={cost}"
+
+
+calltree = get_calltree_from_trace(trace, display_cls=CustomDisplay)
 ```
 
 ## Development
