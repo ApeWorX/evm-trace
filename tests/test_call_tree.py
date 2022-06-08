@@ -16,12 +16,12 @@ CALL: 0xF2Df0b975c0C9eFa2f8CA0491C2d1685104d2488 [194827 gas]
 
 
 @pytest.fixture(scope="session")
-def call_tree(call_tree_structure):
-    return CallTreeNode(**call_tree_structure)
+def call_tree(call_tree_data):
+    return CallTreeNode(**call_tree_data)
 
 
-def test_call_tree_validation_passes(call_tree_structure):
-    tree = CallTreeNode(**call_tree_structure)
+def test_call_tree_validation_passes(call_tree_data):
+    tree = CallTreeNode(**call_tree_data)
     assert tree
 
 

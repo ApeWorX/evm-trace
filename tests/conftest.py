@@ -3,7 +3,7 @@ from hexbytes import HexBytes
 
 from evm_trace.base import CallType
 
-TRACE_FRAME_STRUCTURE = {
+TRACE_FRAME_DATA = {
     "pc": 1564,
     "op": "RETURN",
     "gas": 0,
@@ -25,7 +25,7 @@ TRACE_FRAME_STRUCTURE = {
         "aadb61a4b4c5d48b7a5669391b7c73852a3ab7795f24721b9a439220b54b591b": "0000000000000000000000000000000000000000000000000000000000000001",  # noqa: E501
     },
 }
-CALL_TREE_STRUCTURE = {
+CALL_TREE_DATA = {
     "call_type": CallType.MUTABLE,
     "address": HexBytes("0xf2df0b975c0c9efa2f8ca0491c2d1685104d2488"),
     "value": 0,
@@ -160,10 +160,10 @@ CALL_TREE_STRUCTURE = {
 
 
 @pytest.fixture(scope="session")
-def trace_frame_structure():
-    return TRACE_FRAME_STRUCTURE
+def trace_frame_data():
+    return TRACE_FRAME_DATA
 
 
 @pytest.fixture(scope="session")
-def call_tree_structure():
-    return CALL_TREE_STRUCTURE
+def call_tree_data():
+    return CALL_TREE_DATA
