@@ -8,12 +8,13 @@ extras_require = {
         "pytest-xdist",  # multi-process runner
         "pytest-cov",  # Coverage analyzer plugin
         "hypothesis>=6.2.0,<7.0",  # Strategy-based fuzzer
+        "eth-hash[pysha3]",  # For eth-utils address checksumming
     ],
     "lint": [
         "black>=22.3.0,<23.0",  # auto-formatter and linter
-        "mypy>=0.910,<1.0",  # Static type analyzer
-        "flake8>=3.8.3,<4.0",  # Style linter
-        "isort>=5.9.3,<6.0",  # Import sorting linter
+        "mypy>=0.960,<1.0",  # Static type analyzer
+        "flake8>=4.0.1,<5.0",  # Style linter
+        "isort>=5.10.1,<6.0",  # Import sorting linter
     ],
     "release": [  # `release` GitHub Action job uses this
         "setuptools",  # Installation tool
@@ -56,7 +57,7 @@ setup(
         "importlib-metadata ; python_version<'3.8'",
         "pydantic>=1.9.0,<2.0",
         "hexbytes>=0.2.2,<1.0.0",
-        "eth-utils==1.10.0",
+        "eth-utils>=1.10.0",
     ],  # NOTE: Add 3rd party libraries here
     python_requires=">=3.7.2,<4",
     extras_require=extras_require,
@@ -77,5 +78,6 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
 )

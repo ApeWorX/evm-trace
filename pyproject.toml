@@ -14,12 +14,11 @@ write_to = "evm_trace/version.py"
 
 [tool.black]
 line-length = 100
-target-version = ['py37', 'py38', 'py39']
+target-version = ['py37', 'py38', 'py39', 'py310']
 include = '\.pyi?$'
 
 [tool.pytest.ini_options]
 addopts = """
-    -n auto
     -p no:ape_test
     --cov-branch
     --cov-report term
