@@ -30,8 +30,7 @@ class DisplayableCallTreeNode(object):
 
     @property
     def title(self) -> str:
-        call_type = self.call.call_type.value.upper()
-        call_mnemonic = "CALL" if self.call.call_type == CallType.CALL else f"{call_type}CALL"
+        call_type = self.call.call_type.value
         address_hex_str = self.call.address.hex()
 
         try:
@@ -46,7 +45,7 @@ class DisplayableCallTreeNode(object):
         if self.call.calldata:
             call_path = f"{call_path}.<{self.call.calldata[:4].hex()}>"
 
-        return f"{call_mnemonic}: {call_path} [{cost} gas]"
+        return f"{call_type}: {call_path} [{cost} gas]"
 
     @classmethod
     def make_tree(
