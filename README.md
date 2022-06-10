@@ -51,7 +51,7 @@ root_node_kwargs = {
     "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
     "calldata": "0x00",
     "value": 1000,
-    "call_type": CallType.MUTABLE,
+    "call_type": CallType.CALL,
 }
 
 # Where `trace` is a `TraceFrame` (see example above)

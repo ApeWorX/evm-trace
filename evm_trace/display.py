@@ -31,7 +31,7 @@ class DisplayableCallTreeNode(object):
     @property
     def title(self) -> str:
         call_type = self.call.call_type.value.upper()
-        call_mnemonic = "CALL" if self.call.call_type == CallType.MUTABLE else f"{call_type}CALL"
+        call_mnemonic = "CALL" if self.call.call_type == CallType.CALL else f"{call_type}CALL"
         address_hex_str = self.call.address.hex()
 
         try:

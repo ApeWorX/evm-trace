@@ -150,18 +150,18 @@ def _create_node_from_call(
             # TODO: Validate gas values
 
             if frame.op == "CALL":
-                child_node_kwargs["call_type"] = CallType.MUTABLE
+                child_node_kwargs["call_type"] = CallType.CALL
                 child_node_kwargs["value"] = int(frame.stack[-3].hex(), 16)
                 child_node_kwargs["calldata"] = _extract_memory(
                     offset=frame.stack[-4], size=frame.stack[-5], memory=frame.memory
                 )
             elif frame.op == "DELEGATECALL":
-                child_node_kwargs["call_type"] = CallType.DELEGATE
+                child_node_kwargs["call_type"] = CallType.DELEGATECALL
                 child_node_kwargs["calldata"] = _extract_memory(
                     offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
                 )
             else:
-                child_node_kwargs["call_type"] = CallType.STATIC
+                child_node_kwargs["call_type"] = CallType.STATICCALL
                 child_node_kwargs["calldata"] = _extract_memory(
                     offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
                 )
@@ -197,15 +197,9 @@ def _create_node_from_call(
 
 
 def create_node_from_parity_trace(item, traces):
-    call_types = {
-        "call": CallType.MUTABLE,
-        "staticcall": CallType.STATIC,
-        "delegatecall": CallType.DELEGATE,
-        "callcode": CallType.CODE,
-    }
     if item["type"] == "call":
         node = CallTreeNode(
-            call_type=call_types[item["action"]["callType"]],
+            call_type=CallType(item["action"]["callType"].upper()),
             address=item["action"]["to"],
             value=int(item["action"]["value"], 16),
             gas_limit=int(item["action"]["gas"], 16),
