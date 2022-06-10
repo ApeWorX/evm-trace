@@ -201,6 +201,7 @@ def create_node_from_parity_trace(item, traces):
         "call": CallType.MUTABLE,
         "staticcall": CallType.STATIC,
         "delegatecall": CallType.DELEGATE,
+        "callcode": CallType.CODE,
     }
     if item["type"] == "call":
         node = CallTreeNode(

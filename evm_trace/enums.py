@@ -8,3 +8,4 @@ class CallType(Enum):
     DELEGATE = "DELEGATE"  # DELEGATECALL opcode
     SELFDESTRUCT = "SELFDESTRUCT"  # SELFDESTRUCT opcode
     CREATE = "CREATE"  # CREATE opcode
+    CODE = "CODE"  # CALLCODE opcode
