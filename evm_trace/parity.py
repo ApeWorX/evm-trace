@@ -73,7 +73,7 @@ class ParityTrace(BaseModel):
 
 def get_calltree_from_parity_trace(root: ParityTrace, traces: List[ParityTrace]) -> CallTreeNode:
     """
-    Create a :class:`~evm_trace.base.CallTreeNode` from output models from the Parity approach
+    Create a :class:`~evm_trace.base.CallTreeNode` from output models using the Parity approach
     (e.g. from the ``trace_transaction`` RPC).
 
     Args:

@@ -28,6 +28,8 @@ python3 setup.py install
 
 ## Quick Usage
 
+### Geth Style Traces
+
 If you are using a node that supports the `debug_traceTransaction` RPC, you can use `web3.py` to get trace frames:
 
 ```python
@@ -57,6 +59,27 @@ root_node_kwargs = {
 # Where `trace` is a `TraceFrame` (see example above)
 calltree = get_calltree_from_trace(trace, **root_node_kwargs)
 ```
+
+### Parity Style Traces
+
+If you are using a node that supports the `trace_transaction` RPC, you can use `web3.py` to get trace objects:
+
+```python
+from evm_trace import CallType, ParityTrace
+
+raw_trace_list = self._make_request("trace_transaction", [txn_hash])
+trace_list = [ParityTrace.parse_obj(t) for t in raw_trace_list]
+```
+
+And to make call-tree nodes, you can do:
+
+```python
+from evm_trace import get_calltree_from_parity_trace
+
+tree = get_calltree_from_parity_trace(trace_list[0], trace_list)
+```
+
+### Call Tree Node Customization
 
 You can also customize the output by making your own display class:
 
