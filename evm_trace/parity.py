@@ -31,19 +31,21 @@ class SelfDestructAction(BaseModel):
     address: str
 
 
-class CallResult(BaseModel):
+class ActionResult(BaseModel):
     gas_used: str = Field(alias="gasUsed")
-    output: str
 
     @validator("gas_used", pre=True)
     def convert_integer(cls, v):
         return int(v, 16)
 
 
-class CreateResult(BaseModel):
+class CallResult(ActionResult):
+    output: str
+
+
+class CreateResult(ActionResult):
     address: str
     code: str
-    gas_used: str = Field(alias="gasUsed")
 
 
 ParityTraceAction = Union[CreateAction, CallAction, SelfDestructAction]
@@ -83,6 +85,7 @@ def get_calltree_from_parity_trace(root: ParityTrace, traces: List[ParityTrace])
             **node_kwargs,
             "address": create_result.address,
             "value": create_action.value,
+            "gas_cost": create_result.gas_used,
             "gas_limit": create_action.gas,
             "gas_used": create_result.gas_used,
         }

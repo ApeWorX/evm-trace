@@ -2,8 +2,6 @@ from typing import TYPE_CHECKING, Iterable, Optional
 
 from eth_utils import to_checksum_address
 
-from evm_trace.enums import CallType
-
 if TYPE_CHECKING:
     from evm_trace.base import CallTreeNode
 
