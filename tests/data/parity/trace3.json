@@ -1,0 +1,40 @@
+[
+  {
+    "action": {
+      "from": "0xae7168deb525862f4fee37d987a971b385b96952",
+      "callType": "call",
+      "gas": "0x14d9a",
+      "input": "0xcbf0b0c0000000000000000000000000ae7168deb525862f4fee37d987a971b385b96952",
+      "to": "0x863df6bfa4469f3ead0be8f9f2aae51c91a907b4",
+      "value": "0x0"
+    },
+    "blockHash": "0x894f3aac1c8a0c9b05d2cbe6c0c9af907ca44a1c96aeda69a0ec064b9a74b790",
+    "blockNumber": 4501969,
+    "result": {
+      "gasUsed": "0x14d9a",
+      "output": "0x"
+    },
+    "subtraces": 1,
+    "traceAddress": [],
+    "transactionHash": "0x47f7cff7a5e671884629c93b368cb18f58a993f4b19c2a53a8662e3f1482f690",
+    "transactionPosition": 144,
+    "type": "call"
+  },
+  {
+    "action": {
+      "address": "0x863df6bfa4469f3ead0be8f9f2aae51c91a907b4",
+      "refundAddress": "0xae7168deb525862f4fee37d987a971b385b96952",
+      "balance": "0x0"
+    },
+    "blockHash": "0x894f3aac1c8a0c9b05d2cbe6c0c9af907ca44a1c96aeda69a0ec064b9a74b790",
+    "blockNumber": 4501969,
+    "result": null,
+    "subtraces": 0,
+    "traceAddress": [
+      0
+    ],
+    "transactionHash": "0x47f7cff7a5e671884629c93b368cb18f58a993f4b19c2a53a8662e3f1482f690",
+    "transactionPosition": 144,
+    "type": "suicide"
+  }
+]

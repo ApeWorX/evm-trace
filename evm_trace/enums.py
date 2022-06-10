@@ -7,3 +7,4 @@ class CallType(Enum):
     MUTABLE = "MUTABLE"  # CALL opcode
     DELEGATE = "DELEGATE"  # DELEGATECALL opcode
     SELFDESTRUCT = "SELFDESTRUCT"  # SELFDESTRUCT opcode
+    CREATE = "CREATE"  # CREATE opcode

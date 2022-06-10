@@ -194,3 +194,55 @@ def _create_node_from_call(
     # TODO: Handle "execution halted" vs. gas limit reached
 
     return node
+
+
+def create_node_from_parity_trace(item, traces):
+    call_types = {
+        "call": CallType.MUTABLE,
+        "staticcall": CallType.STATIC,
+        "delegatecall": CallType.DELEGATE,
+    }
+    if item["type"] == "call":
+        node = CallTreeNode(
+            call_type=call_types[item["action"]["callType"]],
+            address=item["action"]["to"],
+            value=int(item["action"]["value"], 16),
+            gas_limit=int(item["action"]["gas"], 16),
+            gas_cost=int(item["result"]["gasUsed"], 16),
+            calldata=item["action"]["input"],
+            returndata=item["result"]["output"],
+            failed="error" in item,
+        )
+    elif item["type"] == "create":
+        # initcode = action.init
+        # runtime code = result.code
+        # created contract = result.address
+        node = CallTreeNode(
+            call_type=CallType.CREATE,
+            address=item["result"]["address"],
+            value=int(item["action"]["value"], 16),
+            gas_limit=int(item["action"]["gas"], 16),
+            gas_cost=int(item["result"]["gasUsed"], 16),
+            failed="error" in item,
+        )
+    elif item["type"] == "suicide":
+        # refund address = action.refundAddress
+        # sent value? = action.balance
+        node = CallTreeNode(
+            call_type=CallType.SELFDESTRUCT,
+            address=item["action"]["address"],
+            gas_limit=0,  # no field
+            gas_cost=0,  # no field
+            failed="error" in item,
+        )
+
+    subcalls = [
+        sub
+        for sub in traces
+        if len(sub["traceAddress"]) == len(item["traceAddress"]) + 1
+        and sub["traceAddress"][:-1] == item["traceAddress"]
+    ]
+    for sub in subcalls:
+        node.calls.append(create_node_from_parity_trace(sub, traces))
+
+    return node
