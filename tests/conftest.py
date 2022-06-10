@@ -201,7 +201,7 @@ def trace_frame_data():
 
 @pytest.fixture(
     scope="session",
-    params=[e.value for e in CallType if e not in (CallType.INTERNAL, CallType.SELFDESTRUCT)],
+    params=(CallType.CALL.value, CallType.DELEGATECALL.value, CallType.STATICCALL.value),
 )
 def call_tree_data(request):
     yield CALL_TREE_DATA_MAP[request.param]

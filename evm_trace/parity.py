@@ -1,8 +1,9 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Type, Union
 
 from pydantic import BaseModel, Field, validator
 
 from evm_trace.base import CallTreeNode, CallType
+from evm_trace.display import DisplayableCallTreeNode
 
 
 class CallAction(BaseModel):
@@ -71,7 +72,11 @@ class ParityTrace(BaseModel):
         return CallType(value)
 
 
-def get_calltree_from_parity_trace(root: ParityTrace, traces: List[ParityTrace]) -> CallTreeNode:
+def get_calltree_from_parity_trace(
+    root: ParityTrace,
+    traces: List[ParityTrace],
+    display_cls: Type[DisplayableCallTreeNode] = DisplayableCallTreeNode,
+) -> DisplayableCallTreeNode:
     """
     Create a :class:`~evm_trace.base.CallTreeNode` from output models using the Parity approach
     (e.g. from the ``trace_transaction`` RPC).
@@ -80,12 +85,18 @@ def get_calltree_from_parity_trace(root: ParityTrace, traces: List[ParityTrace])
         root (:class:`~evm_trace.parity.ParityTrace`): The root parity trace node.
         traces (List[:class:~evm_trace.parity.ParityTrace]): The list of parity trace nodes,
           likely parsed from the response data from the ``trace_transaction`` RPC response.
+        display_cls (Type[DisplayableCallTreeNode]]: A custom class to use for representing
+          the call tree. Defaults to :class:`~evm_trace.display.DisplayableCallTreeNode`.
 
     Returns:
         :class:`~evm_trace.base.CallTreeNode`
     """
 
-    node_kwargs = {"call_type": root.call_type, "error": root.error is not None}
+    node_kwargs = {
+        "call_type": root.call_type,
+        "error": root.error is not None,
+        "display_cls": display_cls,
+    }
 
     if root.call_type == CallType.CREATE:
         # Init code = action.init
