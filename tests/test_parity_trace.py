@@ -6,7 +6,7 @@ import pytest
 from evm_trace.base import create_node_from_parity_trace
 
 
-@pytest.mark.parametrize("name", glob("tests/parity/trace*.json"))
+@pytest.mark.parametrize("name", glob("tests/data/parity/trace*.json"))
 def test_parity_trace(name):
     traces = json.load(open(name))
     print(len(traces))
