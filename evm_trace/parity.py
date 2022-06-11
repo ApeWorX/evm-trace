@@ -123,7 +123,12 @@ def get_calltree_from_parity_trace(
             "gas_used": create_result.gas_used,
         }
 
-    elif root.call_type in (CallType.CALL, CallType.DELEGATECALL):
+    elif root.call_type in (
+        CallType.CALL,
+        CallType.DELEGATECALL,
+        CallType.STATICCALL,
+        CallType.CALLCODE,
+    ):
         call_action: CallAction = root.action  # type: ignore
         call_result: CallResult = root.result  # type: ignore
 
