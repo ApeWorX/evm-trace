@@ -12,6 +12,8 @@ class CallAction(BaseModel):
     receiver: Optional[str] = Field(alias="to", default=None)
     sender: str = Field(alias="from")
     value: int
+    # only used to recover the specific call type
+    call_type: str = Field(alias="callType", repr=False)
 
     @validator("value", "gas", pre=True)
     def convert_integer(cls, v):
@@ -64,7 +66,9 @@ class ParityTrace(BaseModel):
     transaction_hash: str = Field(alias="transactionHash")
 
     @validator("call_type", pre=True)
-    def convert_call_type(cls, v) -> CallType:
+    def convert_call_type(cls, v, values) -> CallType:
+        if isinstance(values["action"], CallAction):
+            v = values["action"].call_type
         value = v.upper()
         if value == "SUICIDE":
             value = "SELFDESTRUCT"
