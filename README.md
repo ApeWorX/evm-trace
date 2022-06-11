@@ -45,7 +45,7 @@ for item in struct_logs:
 If you want to get the call-tree node, you can do:
 
 ```python
-from evm_trace import CallType, get_calltree_from_trace
+from evm_trace import CallType, get_calltree_from_geth_trace
 
 root_node_kwargs = {
     "gas_cost": 10000000,
@@ -57,7 +57,7 @@ root_node_kwargs = {
 }
 
 # Where `trace` is a `TraceFrame` (see example above)
-calltree = get_calltree_from_trace(trace, **root_node_kwargs)
+calltree = get_calltree_from_geth_trace(trace, **root_node_kwargs)
 ```
 
 ### Parity Style Traces
@@ -65,10 +65,10 @@ calltree = get_calltree_from_trace(trace, **root_node_kwargs)
 If you are using a node that supports the `trace_transaction` RPC, you can use `web3.py` to get trace objects:
 
 ```python
-from evm_trace import CallType, ParityTrace
+from evm_trace import CallType, ParityTraceList
 
-raw_trace_list = self._make_request("trace_transaction", [txn_hash])
-trace_list = [ParityTrace.parse_obj(t) for t in raw_trace_list]
+raw_trace_list = web3.manager.request_blocking("trace_transaction", [txn_hash])
+trace_list = ParityTraceList.parse_obj(raw_trace_list)
 ```
 
 And to make call-tree nodes, you can do:
@@ -76,7 +76,7 @@ And to make call-tree nodes, you can do:
 ```python
 from evm_trace import get_calltree_from_parity_trace
 
-tree = get_calltree_from_parity_trace(trace_list[0], trace_list)
+tree = get_calltree_from_parity_trace(trace_list)
 ```
 
 ### Call Tree Node Customization
@@ -95,7 +95,7 @@ class CustomDisplay(DisplayableCallTreeNode):
         return f"{call_type} call @ {address} gas_cost={cost}"
 
 
-calltree = get_calltree_from_trace(trace, display_cls=CustomDisplay)
+calltree = get_calltree_from_geth_trace(trace, display_cls=CustomDisplay)
 ```
 
 ## Development
