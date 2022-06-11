@@ -94,8 +94,8 @@ class ParityTraceList(BaseModel):
 
 
 def get_calltree_from_parity_trace(
-    root: ParityTrace,
-    traces: List[ParityTrace],
+    traces: ParityTraceList,
+    root: Optional[ParityTrace] = None,
     display_cls: Type[DisplayableCallTreeNode] = DisplayableCallTreeNode,
 ) -> DisplayableCallTreeNode:
     """
@@ -103,15 +103,18 @@ def get_calltree_from_parity_trace(
     (e.g. from the ``trace_transaction`` RPC).
 
     Args:
-        root (:class:`~evm_trace.parity.ParityTrace`): The root parity trace node.
-        traces (List[:class:~evm_trace.parity.ParityTrace]): The list of parity trace nodes,
-          likely parsed from the response data from the ``trace_transaction`` RPC response.
+        traces (List[:class:~evm_trace.parity.ParityTraceList]): The list of parity trace nodes,
+          likely loaded from the response data from the ``trace_transaction`` RPC response.
+        root (:class:`~evm_trace.parity.ParityTrace`): The root parity trace node. Optional, uses
+          the first item by default.
         display_cls (Type[DisplayableCallTreeNode]]: A custom class to use for representing
           the call tree. Defaults to :class:`~evm_trace.display.DisplayableCallTreeNode`.
 
     Returns:
         :class:`~evm_trace.base.CallTreeNode`
     """
+    if root is None:
+        root = traces[0]
 
     node_kwargs = {
         "call_type": root.call_type,
@@ -170,12 +173,12 @@ def get_calltree_from_parity_trace(
         }
 
     node_kwargs["calls"] = []
-    sub_trees = [
+    subtraces = [
         sub
         for sub in traces
         if len(sub.trace_address) == len(root.trace_address) + 1
         and sub.trace_address[:-1] == root.trace_address
     ]
-    node_kwargs["calls"] = [get_calltree_from_parity_trace(sub, traces) for sub in sub_trees]
+    node_kwargs["calls"] = [get_calltree_from_parity_trace(traces, root=sub) for sub in subtraces]
     node = CallTreeNode.parse_obj(node_kwargs)
     return node
