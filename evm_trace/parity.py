@@ -97,7 +97,7 @@ def get_calltree_from_parity_trace(
     traces: ParityTraceList,
     root: Optional[ParityTrace] = None,
     display_cls: Type[DisplayableCallTreeNode] = DisplayableCallTreeNode,
-) -> DisplayableCallTreeNode:
+) -> CallTreeNode:
     """
     Create a :class:`~evm_trace.base.CallTreeNode` from output models using the Parity approach
     (e.g. from the ``trace_transaction`` RPC).
@@ -127,12 +127,14 @@ def get_calltree_from_parity_trace(
         create_result: CreateResult = root.result  # type: ignore
 
         node_kwargs.update(
-            address=create_result.address,
             value=create_action.value,
-            gas_cost=create_result.gas_used,
             gas_limit=create_action.gas,
-            gas_used=create_result.gas_used,
         )
+        if create_result:
+            node_kwargs.update(
+                gas_used=create_result.gas_used,
+                address=create_result.address
+            )
 
     elif root.call_type in (
         CallType.CALL,

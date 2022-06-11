@@ -29,10 +29,10 @@ class DisplayableCallTreeNode(object):
     @property
     def title(self) -> str:
         call_type = self.call.call_type.value
-        address_hex_str = self.call.address.hex()
+        address_hex_str = self.call.address.hex() if self.call.address else None
 
         try:
-            address = to_checksum_address(address_hex_str)
+            address = to_checksum_address(address_hex_str) if address_hex_str else None
         except ImportError:
             # Ignore checksumming if user does not have eth-hash backend installed.
             address = address_hex_str
