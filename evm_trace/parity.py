@@ -32,6 +32,11 @@ class CreateAction(BaseModel):
 
 class SelfDestructAction(BaseModel):
     address: str
+    balance: int
+
+    @validator("balance", pre=True)
+    def convert_integer(cls, v):
+        return int(v, 16)
 
 
 class ActionResult(BaseModel):
