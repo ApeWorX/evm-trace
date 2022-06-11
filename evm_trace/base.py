@@ -1,5 +1,5 @@
 import math
-from typing import Any, Dict, Iterable, Iterator, List, Type
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Type
 
 from eth_utils import to_int
 from hexbytes import HexBytes
@@ -41,7 +41,7 @@ class CallTreeNode(BaseModel):
     value: int = 0
     depth: int = 0
     gas_limit: int
-    gas_cost: int  # calculated from call starting and return
+    gas_cost: Optional[int]  # calculated from call starting and return
     calldata: Any = HexBytes(b"")
     returndata: Any = HexBytes(b"")
     calls: List["CallTreeNode"] = []
