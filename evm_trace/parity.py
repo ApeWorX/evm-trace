@@ -116,27 +116,23 @@ def get_calltree_from_parity_trace(
     if root is None:
         root = traces[0]
 
-    node_kwargs = {
-        "call_type": root.call_type,
-        "error": root.error is not None,
-        "display_cls": display_cls,
-    }
+    node_kwargs = dict(
+        call_type=root.call_type,
+        error=root.error is not None,
+        display_cls=display_cls,
+    )
 
     if root.call_type == CallType.CREATE:
-        # Init code = action.init
-        # Runtime code = result.code
-        # Created contract = result.address
         create_action: CreateAction = root.action  # type: ignore
         create_result: CreateResult = root.result  # type: ignore
 
-        node_kwargs = {
-            **node_kwargs,
-            "address": create_result.address,
-            "value": create_action.value,
-            "gas_cost": create_result.gas_used,
-            "gas_limit": create_action.gas,
-            "gas_used": create_result.gas_used,
-        }
+        node_kwargs.update(
+            address=create_result.address,
+            value=create_action.value,
+            gas_cost=create_result.gas_used,
+            gas_limit=create_action.gas,
+            gas_used=create_result.gas_used,
+        )
 
     elif root.call_type in (
         CallType.CALL,
@@ -147,13 +143,12 @@ def get_calltree_from_parity_trace(
         call_action: CallAction = root.action  # type: ignore
         call_result: CallResult = root.result  # type: ignore
 
-        node_kwargs = {
-            **node_kwargs,
-            "address": call_action.receiver,
-            "value": call_action.value,
-            "gas_limit": call_action.gas,
-            "calldata": call_action.input,
-        }
+        node_kwargs.update(
+            address=call_action.receiver,
+            value=call_action.value,
+            gas_limit=call_action.gas,
+            calldata=call_action.input,
+        )
         # no result if the call has an error
         if call_result:
             node_kwargs.update(
@@ -162,17 +157,11 @@ def get_calltree_from_parity_trace(
             )
 
     elif root.call_type == CallType.SELFDESTRUCT:
-        # Refund address = action.refundAddress
-        # Sent value = action.balance
         selfdestruct_action: SelfDestructAction = root.action  # type: ignore
-        node_kwargs = {
-            **node_kwargs,
-            "address": selfdestruct_action.address,
-            "gas_limit": 0,  # No field
-            "gas_cost": 0,  # No field
-        }
+        node_kwargs.update(
+            address=selfdestruct_action.address,
+        )
 
-    node_kwargs["calls"] = []
     subtraces = [
         sub
         for sub in traces

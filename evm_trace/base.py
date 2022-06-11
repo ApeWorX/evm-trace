@@ -40,7 +40,7 @@ class CallTreeNode(BaseModel):
     address: Any
     value: int = 0
     depth: int = 0
-    gas_limit: int
+    gas_limit: Optional[int]
     gas_cost: Optional[int]  # calculated from call starting and return
     calldata: Any = HexBytes(b"")
     returndata: Any = HexBytes(b"")
