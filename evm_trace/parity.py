@@ -1,4 +1,5 @@
-from typing import List, Optional, Type, Union
+from collections import defaultdict
+from typing import Dict, List, Optional, Tuple, Type, Union
 
 from pydantic import BaseModel, Field, validator
 
@@ -79,6 +80,17 @@ class ParityTrace(BaseModel):
             value = "SELFDESTRUCT"
 
         return CallType(value)
+
+
+class ParityTraceList(BaseModel):
+    __root__: List[ParityTrace]
+
+    # pydantic models with custom root don't have this by default
+    def __iter__(self):
+        return iter(self.__root__)
+
+    def __getitem__(self, item):
+        return self.__root__[item]
 
 
 def get_calltree_from_parity_trace(
