@@ -137,10 +137,14 @@ def get_calltree_from_parity_trace(
             "address": call_action.receiver,
             "value": call_action.value,
             "gas_limit": call_action.gas,
-            "gas_cost": call_result.gas_used,
             "calldata": call_action.input,
-            "returndata": call_result.output,
         }
+        # no result if the call has an error
+        if call_result:
+            node_kwargs.update(
+                gas_cost=call_result.gas_used,
+                returndata=call_result.output,
+            )
 
     elif root.call_type == CallType.SELFDESTRUCT:
         # Refund address = action.refundAddress
