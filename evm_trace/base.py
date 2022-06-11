@@ -67,7 +67,7 @@ class CallTreeNode(BaseModel):
         return self.calls[index]
 
 
-def get_calltree_from_trace(
+def get_calltree_from_geth_trace(
     trace: Iterator[TraceFrame], show_internal=False, **root_node_kwargs
 ) -> CallTreeNode:
     """
