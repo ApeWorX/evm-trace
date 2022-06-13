@@ -1,5 +1,4 @@
-from collections import defaultdict
-from typing import Dict, List, Optional, Tuple, Type, Union
+from typing import List, Optional, Type, Union
 
 from pydantic import BaseModel, Field, validator
 
@@ -131,10 +130,7 @@ def get_calltree_from_parity_trace(
             gas_limit=create_action.gas,
         )
         if create_result:
-            node_kwargs.update(
-                gas_used=create_result.gas_used,
-                address=create_result.address
-            )
+            node_kwargs.update(gas_used=create_result.gas_used, address=create_result.address)
 
     elif root.call_type in (
         CallType.CALL,
