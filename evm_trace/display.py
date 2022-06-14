@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, Iterator, Optional
 
 from eth_utils import to_checksum_address
 
@@ -58,7 +58,7 @@ class DisplayableCallTreeNode(object):
         root: "CallTreeNode",
         parent: Optional["DisplayableCallTreeNode"] = None,
         is_last: bool = False,
-    ) -> Iterable["DisplayableCallTreeNode"]:
+    ) -> Iterator["DisplayableCallTreeNode"]:
         displayable_root = cls(root, parent=parent, is_last=is_last)
         yield displayable_root
 

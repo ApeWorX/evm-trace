@@ -117,7 +117,7 @@ def get_calltree_from_parity_trace(
 
     node_kwargs = dict(
         call_type=root.call_type,
-        error=root.error is not None,
+        failed=root.error is not None,
         display_cls=display_cls,
     )
 
@@ -160,7 +160,6 @@ def get_calltree_from_parity_trace(
             address=selfdestruct_action.address,
         )
 
-    print(root)
     subtraces = [
         sub
         for sub in traces

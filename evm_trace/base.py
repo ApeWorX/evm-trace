@@ -1,5 +1,5 @@
 import math
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Type
+from typing import Any, Dict, Iterator, List, Optional, Type
 
 from eth_utils import to_int
 from hexbytes import HexBytes
@@ -50,7 +50,7 @@ class CallTreeNode(BaseModel):
     display_cls: Type[DisplayableCallTreeNode] = DisplayableCallTreeNode
 
     @property
-    def display_nodes(self) -> Iterable[DisplayableCallTreeNode]:
+    def display_nodes(self) -> Iterator[DisplayableCallTreeNode]:
         return self.display_cls.make_tree(self)
 
     @validator("address", "calldata", "returndata", pre=True)
