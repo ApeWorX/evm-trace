@@ -9,7 +9,7 @@ TRACE_FRAME_DATA = {
     "gas": 0,
     "gasCost": 0,
     "depth": 1,
-    "callType": CallType.MUTABLE.value,
+    "callType": CallType.CALL.value,
     "stack": [
         "0000000000000000000000000000000000000000000000000000000040c10f19",
         "0000000000000000000000000000000000000000000000000000000000000020",
@@ -26,7 +26,7 @@ TRACE_FRAME_DATA = {
     },
 }
 MUTABLE_CALL_TREE_DATA = {
-    "call_type": CallType.MUTABLE,
+    "call_type": CallType.CALL,
     "address": HexBytes("0xf2df0b975c0c9efa2f8ca0491c2d1685104d2488"),
     "value": 0,
     "depth": 0,
@@ -36,7 +36,7 @@ MUTABLE_CALL_TREE_DATA = {
     "returndata": HexBytes("0x"),
     "calls": [
         {
-            "call_type": CallType.MUTABLE,
+            "call_type": CallType.CALL,
             "address": HexBytes("0xbcf7fffd8b256ec51a36782a52d0c34f6474d951"),
             "value": 0,
             "depth": 1,
@@ -46,7 +46,7 @@ MUTABLE_CALL_TREE_DATA = {
             "returndata": HexBytes("0x"),
             "calls": [
                 {
-                    "call_type": CallType.MUTABLE,
+                    "call_type": CallType.CALL,
                     "address": HexBytes("0x274b028b03a250ca03644e6c578d81f019ee1323"),
                     "value": 0,
                     "depth": 2,
@@ -65,7 +65,7 @@ MUTABLE_CALL_TREE_DATA = {
             "displays_last": False,
         },
         {
-            "call_type": CallType.MUTABLE,
+            "call_type": CallType.CALL,
             "address": HexBytes("0xbcf7fffd8b256ec51a36782a52d0c34f6474d951"),
             "value": 0,
             "depth": 1,
@@ -75,7 +75,7 @@ MUTABLE_CALL_TREE_DATA = {
             "returndata": HexBytes("0x"),
             "calls": [
                 {
-                    "call_type": CallType.MUTABLE,
+                    "call_type": CallType.CALL,
                     "address": HexBytes("0x274b028b03a250ca03644e6c578d81f019ee1323"),
                     "value": 0,
                     "depth": 2,
@@ -94,7 +94,7 @@ MUTABLE_CALL_TREE_DATA = {
             "displays_last": False,
         },
         {
-            "call_type": CallType.MUTABLE,
+            "call_type": CallType.CALL,
             "address": HexBytes("0xbcf7fffd8b256ec51a36782a52d0c34f6474d951"),
             "value": 0,
             "depth": 1,
@@ -106,7 +106,7 @@ MUTABLE_CALL_TREE_DATA = {
             "returndata": HexBytes("0x"),
             "calls": [
                 {
-                    "call_type": CallType.MUTABLE,
+                    "call_type": CallType.CALL,
                     "address": HexBytes("0x274b028b03a250ca03644e6c578d81f019ee1323"),
                     "value": 0,
                     "depth": 2,
@@ -120,7 +120,7 @@ MUTABLE_CALL_TREE_DATA = {
                     "displays_last": False,
                 },
                 {
-                    "call_type": CallType.MUTABLE,
+                    "call_type": CallType.CALL,
                     "address": HexBytes("0x274b028b03a250ca03644e6c578d81f019ee1323"),
                     "value": 0,
                     "depth": 2,
@@ -134,7 +134,7 @@ MUTABLE_CALL_TREE_DATA = {
                     "displays_last": False,
                 },
                 {
-                    "call_type": CallType.MUTABLE,
+                    "call_type": CallType.CALL,
                     "address": HexBytes("0x274b028b03a250ca03644e6c578d81f019ee1323"),
                     "value": 0,
                     "depth": 2,
@@ -158,7 +158,7 @@ MUTABLE_CALL_TREE_DATA = {
     "displays_last": True,
 }
 STATIC_CALL_TREE_DATA = {
-    "call_type": CallType.STATIC,
+    "call_type": CallType.STATICCALL,
     "address": HexBytes("0x274b028b03a250ca03644e6c578d81f019ee1323"),
     "value": 0,
     "depth": 2,
@@ -173,7 +173,7 @@ STATIC_CALL_TREE_DATA = {
     "failed": False,
 }
 DELEGATE_CALL_TREE_DATA = {
-    "call_type": CallType.DELEGATE,
+    "call_type": CallType.DELEGATECALL,
     "address": HexBytes("0xaa1a02671440be41545d83bddff2bf2488628c10"),
     "value": 0,
     "depth": 3,
@@ -188,9 +188,9 @@ DELEGATE_CALL_TREE_DATA = {
     "failed": False,
 }
 CALL_TREE_DATA_MAP = {
-    CallType.MUTABLE.value: MUTABLE_CALL_TREE_DATA,
-    CallType.STATIC.value: STATIC_CALL_TREE_DATA,
-    CallType.DELEGATE.value: DELEGATE_CALL_TREE_DATA,
+    CallType.CALL.value: MUTABLE_CALL_TREE_DATA,
+    CallType.STATICCALL.value: STATIC_CALL_TREE_DATA,
+    CallType.DELEGATECALL.value: DELEGATE_CALL_TREE_DATA,
 }
 
 
@@ -201,7 +201,7 @@ def trace_frame_data():
 
 @pytest.fixture(
     scope="session",
-    params=[e.value for e in CallType if e not in (CallType.INTERNAL, CallType.SELFDESTRUCT)],
+    params=(CallType.CALL.value, CallType.DELEGATECALL.value, CallType.STATICCALL.value),
 )
 def call_tree_data(request):
     yield CALL_TREE_DATA_MAP[request.param]

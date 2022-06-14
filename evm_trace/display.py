@@ -2,8 +2,6 @@ from typing import TYPE_CHECKING, Iterable, Optional
 
 from eth_utils import to_checksum_address
 
-from evm_trace.enums import CallType
-
 if TYPE_CHECKING:
     from evm_trace.base import CallTreeNode
 
@@ -30,12 +28,11 @@ class DisplayableCallTreeNode(object):
 
     @property
     def title(self) -> str:
-        call_type = self.call.call_type.value.upper()
-        call_mnemonic = "CALL" if self.call.call_type == CallType.MUTABLE else f"{call_type}CALL"
-        address_hex_str = self.call.address.hex()
+        call_type = self.call.call_type.value
+        address_hex_str = self.call.address.hex() if self.call.address else None
 
         try:
-            address = to_checksum_address(address_hex_str)
+            address = to_checksum_address(address_hex_str) if address_hex_str else None
         except ImportError:
             # Ignore checksumming if user does not have eth-hash backend installed.
             address = address_hex_str
@@ -46,7 +43,7 @@ class DisplayableCallTreeNode(object):
         if self.call.calldata:
             call_path = f"{call_path}.<{self.call.calldata[:4].hex()}>"
 
-        return f"{call_mnemonic}: {call_path} [{cost} gas]"
+        return f"{call_type}: {call_path} [{cost} gas]"
 
     @classmethod
     def make_tree(

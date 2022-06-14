@@ -1,0 +1,42 @@
+[
+  {
+    "action": {
+      "from": "0x53db50edf9dd805c7a3c2dc35bfad4fb4d01d310",
+      "callType": "call",
+      "gas": "0x2b8b4",
+      "input": "0xa9059cbb000000000000000000000000c9d55d9d2510507d4f7387608840e9dc5aa3af7c00000000000000000000000000000000000000000000000a4cc799563c380000",
+      "to": "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+      "value": "0x0"
+    },
+    "blockHash": "0x948c4ad3200484533118206971a77522f6fe6546d6b71b8591a2217d8b769036",
+    "blockNumber": 14941267,
+    "error": "Reverted",
+    "result": null,
+    "subtraces": 1,
+    "traceAddress": [],
+    "transactionHash": "0xaf38b3b6baf99f5a4c17859c3c35112d3a6a3f762f42e8d066d9c6f6f90a55c1",
+    "transactionPosition": 21,
+    "type": "call"
+  },
+  {
+    "action": {
+      "from": "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+      "callType": "delegatecall",
+      "gas": "0x29206",
+      "input": "0xa9059cbb000000000000000000000000c9d55d9d2510507d4f7387608840e9dc5aa3af7c00000000000000000000000000000000000000000000000a4cc799563c380000",
+      "to": "0xc13eac3b4f9eed480045113b7af00f7b5655ece8",
+      "value": "0x0"
+    },
+    "blockHash": "0x948c4ad3200484533118206971a77522f6fe6546d6b71b8591a2217d8b769036",
+    "blockNumber": 14941267,
+    "error": "Out of gas",
+    "result": null,
+    "subtraces": 0,
+    "traceAddress": [
+      0
+    ],
+    "transactionHash": "0xaf38b3b6baf99f5a4c17859c3c35112d3a6a3f762f42e8d066d9c6f6f90a55c1",
+    "transactionPosition": 21,
+    "type": "call"
+  }
+]

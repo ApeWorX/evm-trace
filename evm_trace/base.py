@@ -1,5 +1,5 @@
 import math
-from typing import Any, Dict, Iterable, Iterator, List, Type
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Type
 
 from eth_utils import to_int
 from hexbytes import HexBytes
@@ -40,8 +40,8 @@ class CallTreeNode(BaseModel):
     address: Any
     value: int = 0
     depth: int = 0
-    gas_limit: int
-    gas_cost: int  # calculated from call starting and return
+    gas_limit: Optional[int]
+    gas_cost: Optional[int]  # calculated from call starting and return
     calldata: Any = HexBytes(b"")
     returndata: Any = HexBytes(b"")
     calls: List["CallTreeNode"] = []
@@ -67,7 +67,7 @@ class CallTreeNode(BaseModel):
         return self.calls[index]
 
 
-def get_calltree_from_trace(
+def get_calltree_from_geth_trace(
     trace: Iterator[TraceFrame], show_internal=False, **root_node_kwargs
 ) -> CallTreeNode:
     """
@@ -150,18 +150,18 @@ def _create_node_from_call(
             # TODO: Validate gas values
 
             if frame.op == "CALL":
-                child_node_kwargs["call_type"] = CallType.MUTABLE
+                child_node_kwargs["call_type"] = CallType.CALL
                 child_node_kwargs["value"] = int(frame.stack[-3].hex(), 16)
                 child_node_kwargs["calldata"] = _extract_memory(
                     offset=frame.stack[-4], size=frame.stack[-5], memory=frame.memory
                 )
             elif frame.op == "DELEGATECALL":
-                child_node_kwargs["call_type"] = CallType.DELEGATE
+                child_node_kwargs["call_type"] = CallType.DELEGATECALL
                 child_node_kwargs["calldata"] = _extract_memory(
                     offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
                 )
             else:
-                child_node_kwargs["call_type"] = CallType.STATIC
+                child_node_kwargs["call_type"] = CallType.STATICCALL
                 child_node_kwargs["calldata"] = _extract_memory(
                     offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
                 )
