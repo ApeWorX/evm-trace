@@ -30,6 +30,6 @@ EXPECTED_OUTPUT_MAP = {
 def test_parity(name):
     path = DATA_PATH / f"{name}.json"
     traces = ParityTraceList.parse_file(path)
-    actual = get_calltree_from_parity_trace(traces)
+    actual = repr(get_calltree_from_parity_trace(traces))
     expected = EXPECTED_OUTPUT_MAP[name].strip()
-    assert repr(actual) == expected
+    assert actual == expected
