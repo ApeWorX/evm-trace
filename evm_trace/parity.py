@@ -160,6 +160,7 @@ def get_calltree_from_parity_trace(
             address=selfdestruct_action.address,
         )
 
+    print(root)
     subtraces = [
         sub
         for sub in traces
