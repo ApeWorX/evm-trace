@@ -38,11 +38,12 @@ class DisplayableCallTreeNode(object):
             address = address_hex_str
 
         cost = self.call.gas_cost
-        call_path = str(address)
+        call_path = str(address) if address else ""
         if self.call.calldata:
-            call_path = f"{call_path}.<{self.call.calldata[:4].hex()}>"
+            call_path = f"{call_path}." if call_path else ""
+            call_path = f"{call_path}<{self.call.calldata[:4].hex()}>"
 
-        node_title = f"{call_type}: {call_path}"
+        node_title = f"{call_type}: {call_path}" if call_path else call_type
         if cost is not None:
             node_title = f"{node_title} [{cost} gas]"
 
