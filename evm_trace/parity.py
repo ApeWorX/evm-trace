@@ -116,7 +116,7 @@ def get_calltree_from_parity_trace(
         :class:`~evm_trace.base.CallTreeNode`
     """
     root = root or traces[0]
-    failed = any([t.error is not None for t in traces]) and root is not None
+    failed = root.error is not None
     node_kwargs: Dict[Any, Any] = dict(
         call_type=root.call_type,
         failed=failed,
