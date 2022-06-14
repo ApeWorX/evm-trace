@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel, Field, validator
 
@@ -112,12 +112,11 @@ def get_calltree_from_parity_trace(
     Returns:
         :class:`~evm_trace.base.CallTreeNode`
     """
-    if root is None:
-        root = traces[0]
-
-    node_kwargs = dict(
+    root = root or traces[0]
+    failed = any([t.error is not None for t in traces]) and root is not None
+    node_kwargs: Dict[Any, Any] = dict(
         call_type=root.call_type,
-        failed=root.error is not None,
+        failed=failed,
         display_cls=display_cls,
     )
 
