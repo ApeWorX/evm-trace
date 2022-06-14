@@ -96,6 +96,7 @@ def get_calltree_from_parity_trace(
     traces: ParityTraceList,
     root: Optional[ParityTrace] = None,
     display_cls: Type[DisplayableCallTreeNode] = DisplayableCallTreeNode,
+    **root_kwargs,
 ) -> CallTreeNode:
     """
     Create a :class:`~evm_trace.base.CallTreeNode` from output models using the Parity approach
@@ -108,6 +109,8 @@ def get_calltree_from_parity_trace(
           the first item by default.
         display_cls (Type[DisplayableCallTreeNode]]: A custom class to use for representing
           the call tree. Defaults to :class:`~evm_trace.display.DisplayableCallTreeNode`.
+        **root_kwargs: Additional kwargs to append to the root node. Useful for adding gas for
+          reverted calls.
 
     Returns:
         :class:`~evm_trace.base.CallTreeNode`
@@ -118,6 +121,7 @@ def get_calltree_from_parity_trace(
         call_type=root.call_type,
         failed=failed,
         display_cls=display_cls,
+        **root_kwargs,
     )
 
     if root.call_type == CallType.CREATE:
