@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel, Field, validator
 
@@ -96,6 +96,7 @@ def get_calltree_from_parity_trace(
     traces: ParityTraceList,
     root: Optional[ParityTrace] = None,
     display_cls: Type[DisplayableCallTreeNode] = DisplayableCallTreeNode,
+    **root_kwargs,
 ) -> CallTreeNode:
     """
     Create a :class:`~evm_trace.base.CallTreeNode` from output models using the Parity approach
@@ -108,17 +109,19 @@ def get_calltree_from_parity_trace(
           the first item by default.
         display_cls (Type[DisplayableCallTreeNode]]: A custom class to use for representing
           the call tree. Defaults to :class:`~evm_trace.display.DisplayableCallTreeNode`.
+        **root_kwargs: Additional kwargs to append to the root node. Useful for adding gas for
+          reverted calls.
 
     Returns:
         :class:`~evm_trace.base.CallTreeNode`
     """
-    if root is None:
-        root = traces[0]
-
-    node_kwargs = dict(
+    root = root or traces[0]
+    failed = root.error is not None
+    node_kwargs: Dict[Any, Any] = dict(
         call_type=root.call_type,
-        error=root.error is not None,
+        failed=failed,
         display_cls=display_cls,
+        **root_kwargs,
     )
 
     if root.call_type == CallType.CREATE:
