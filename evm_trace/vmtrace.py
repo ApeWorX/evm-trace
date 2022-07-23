@@ -5,10 +5,10 @@ from typing import Any, Dict, Iterator, List, Optional, Type
 from eth.vm.memory import Memory
 from eth.vm.stack import Stack
 from eth_abi import decode_single, encode_single
-from eth_utils import decode_hex, encode_hex, to_checksum_address
+from eth_utils import decode_hex, to_checksum_address
 from hexbytes import HexBytes
 from msgspec import Struct
-from msgspec.json import Decoder, Encoder
+from msgspec.json import Decoder
 
 # fmt: off
 # opcodes grouped by the number of items they pop from the stack
@@ -78,6 +78,16 @@ class StorageDiff(Struct):
     """What the value has been changed to."""
 
 
+class RPCResponse(Struct):
+    result: RPCTraceResult
+
+
+class RPCTraceResult(Struct):
+    trace: Optional[List]
+    vmTrace: Optional[VMTrace]
+    stateDiff: Optional[Dict]
+
+
 class VMTraceFrame(Struct):
     address: str
     pc: int
@@ -86,13 +96,6 @@ class VMTraceFrame(Struct):
     stack: List[int]
     memory: List[int]
     storage: Dict[int, int]
-
-
-def enc_hook(obj: Any) -> Any:
-    if type is uint256:
-        return hex(obj)
-    if type is HexBytes:
-        return encode_hex(obj)
 
 
 def dec_hook(type: Type, obj: Any) -> Any:
@@ -106,7 +109,7 @@ def to_address(value):
     return to_checksum_address(decode_single("address", encode_single("uint256", value)))
 
 
-def get_trace_frames_from_vmtrace(
+def to_trace_frames(
     trace: VMTrace,
     depth: int = 0,
     address: str = None,
@@ -138,13 +141,13 @@ def get_trace_frames_from_vmtrace(
             op=op.op,
             depth=depth,
             stack=[val for typ, val in stack.values],
-            memory=[memory.read_bytes(i, 32) for i in range(0, len(memory), 32)],
+            memory=HexBytes(memory._bytes),
             storage=storage.copy(),
         )
 
         if op.sub:
-            yield from get_trace_frames_from_vmtrace(op.sub, offset=depth + 1, address=call_address)
+            yield from to_trace_frames(op.sub, depth=depth + 1, address=call_address)
 
 
-decoder = Decoder(VMTrace, dec_hook=dec_hook)
-encoder = Encoder(enc_hook=enc_hook)
+def from_rpc_response(buffer: bytes) -> VMTrace:
+    return Decoder(RPCResponse, dec_hook=dec_hook).decode(buffer).result.vmTrace
