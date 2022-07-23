@@ -12,7 +12,7 @@ from msgspec.json import Decoder
 
 # fmt: off
 # opcodes grouped by the number of items they pop from the stack
-POPCODES = {
+POPS_TO_CODE = {
     1: ["EXTCODEHASH", "ISZERO", "NOT", "BALANCE", "CALLDATALOAD", "EXTCODESIZE", "BLOCKHASH", "POP", "MLOAD", "SLOAD", "JUMP", "SELFDESTRUCT"],  # noqa: E501
     2: ["SHL", "SHR", "SAR", "REVERT", "ADD", "MUL", "SUB", "DIV", "SDIV", "MOD", "SMOD", "EXP", "SIGNEXTEND", "LT", "GT", "SLT", "SGT", "EQ", "AND", "XOR", "OR", "BYTE", "SHA3", "MSTORE", "MSTORE8", "SSTORE", "JUMPI", "LOG0", "RETURN"],  # noqa: E501
     3: ["RETURNDATACOPY", "ADDMOD", "MULMOD", "CALLDATACOPY", "CODECOPY", "CREATE"],
@@ -21,7 +21,7 @@ POPCODES = {
     7: ["CALL", "CALLCODE"]
 }
 # fmt: on
-POPCODES = {op: n for n in POPCODES for op in POPCODES[n]}
+POPCODES = {op: n for n, opcodes in POPS_TO_CODE.items() for op in opcodes}
 POPCODES.update({f"LOG{n}": n + 2 for n in range(1, 5)})
 POPCODES.update({f"SWAP{i}": i + 1 for i in range(1, 17)})
 POPCODES.update({f"DUP{i}": i for i in range(1, 17)})
@@ -43,7 +43,7 @@ class VMOperation(Struct):
     """The program counter."""
     cost: int
     """The gas cost for this instruction."""
-    ex: Optional[VMExecutedOperation]
+    ex: VMExecutedOperation
     """Information concerning the execution of the operation."""
     sub: Optional[VMTrace]
     """Subordinate trace of the CALL/CREATE if applicable."""
@@ -84,7 +84,7 @@ class RPCResponse(Struct):
 
 class RPCTraceResult(Struct):
     trace: Optional[List]
-    vmTrace: Optional[VMTrace]
+    vmTrace: VMTrace
     stateDiff: Optional[Dict]
 
 
