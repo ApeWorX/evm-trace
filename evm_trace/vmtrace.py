@@ -14,7 +14,7 @@ from msgspec.json import Decoder  # type: ignore
 # fmt: off
 POP_OPCODES = {
     1: ["EXTCODEHASH", "ISZERO", "NOT", "BALANCE", "CALLDATALOAD", "EXTCODESIZE", "BLOCKHASH", "POP", "MLOAD", "SLOAD", "JUMP", "SELFDESTRUCT"],  # noqa: E501
-    2: ["SHL", "SHR", "SAR", "REVERT", "ADD", "MUL", "SUB", "DIV", "SDIV", "MOD", "SMOD", "EXP", "SIGNEXTEND", "LT", "GT", "SLT", "SGT", "EQ", "AND", "XOR", "OR", "BYTE", "SHA3", "MSTORE", "MSTORE8", "SSTORE", "JUMPI", "LOG0", "RETURN"],  # noqa: E501
+    2: ["SHL", "SHR", "SAR", "REVERT", "ADD", "MUL", "SUB", "DIV", "SDIV", "MOD", "SMOD", "EXP", "SIGNEXTEND", "LT", "GT", "SLT", "SGT", "EQ", "AND", "XOR", "OR", "BYTE", "SHA3", "MSTORE", "MSTORE8", "SSTORE", "JUMPI", "RETURN"],  # noqa: E501
     3: ["RETURNDATACOPY", "ADDMOD", "MULMOD", "CALLDATACOPY", "CODECOPY", "CREATE"],
     4: ["CREATE2", "EXTCODECOPY"],
     6: ["STATICCALL", "DELEGATECALL"],
@@ -22,7 +22,7 @@ POP_OPCODES = {
 }
 # fmt: on
 POPCODES = {op: n for n, opcodes in POP_OPCODES.items() for op in opcodes}
-POPCODES.update({f"LOG{n}": n + 2 for n in range(1, 5)})
+POPCODES.update({f"LOG{n}": n + 2 for n in range(0, 5)})
 POPCODES.update({f"SWAP{i}": i + 1 for i in range(1, 17)})
 POPCODES.update({f"DUP{i}": i for i in range(1, 17)})
 
