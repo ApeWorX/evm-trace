@@ -118,6 +118,7 @@ def to_trace_frames(
     memory = Memory()
     stack = Stack()
     storage: Dict[int, int] = {}
+    call_address = None
 
     for op in trace.ops:
         if verbose:
