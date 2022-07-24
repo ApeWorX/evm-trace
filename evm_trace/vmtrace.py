@@ -94,7 +94,7 @@ class VMTraceFrame(Struct):
     op: str
     depth: int
     stack: List[int]
-    memory: List[HexBytes]
+    memory: bytes
     storage: Dict[int, int]
 
 
@@ -133,7 +133,7 @@ def to_trace_frames(
             op=op.op,
             depth=depth,
             stack=[val for typ, val in stack.values],
-            memory=[HexBytes(memory.read_bytes(i, 32)) for i in range(0, len(memory), 32)],
+            memory=memory.read_bytes(0, len(memory)),
             storage=storage.copy(),
         )
 
