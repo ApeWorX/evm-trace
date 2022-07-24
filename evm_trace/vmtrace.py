@@ -4,8 +4,7 @@ from typing import Any, Dict, Iterator, List, Optional, Type
 
 from eth.vm.memory import Memory  # type: ignore
 from eth.vm.stack import Stack  # type: ignore
-from eth_abi import decode_single, encode_single  # type: ignore
-from eth_utils import decode_hex, to_checksum_address
+from eth_utils import to_checksum_address
 from hexbytes import HexBytes
 from msgspec import Struct  # type: ignore
 from msgspec.json import Decoder  # type: ignore
@@ -43,7 +42,7 @@ class VMOperation(Struct):
     """The program counter."""
     cost: int
     """The gas cost for this instruction."""
-    ex: VMExecutedOperation
+    ex: Optional[VMExecutedOperation]
     """Information concerning the execution of the operation."""
     sub: Optional[VMTrace]
     """Subordinate trace of the CALL/CREATE if applicable."""
@@ -107,14 +106,13 @@ def dec_hook(type: Type, obj: Any) -> Any:
 
 def to_address(value):
     # clear the padding and expand to 32 bytes
-    return to_checksum_address(value[-20:].rjust(20, b'\x00'))
+    return to_checksum_address(value[-20:].rjust(20, b"\x00"))
 
 
 def to_trace_frames(
     trace: VMTrace,
     depth: int = 1,
     address: str = None,
-    verbose: bool = False,
 ) -> Iterator[VMTraceFrame]:
     memory = Memory()
     stack = Stack()
@@ -122,10 +120,7 @@ def to_trace_frames(
     call_address = None
 
     for op in trace.ops:
-        if verbose:
-            print(op)
-
-        if op.ex.mem:
+        if op.ex and op.ex.mem:
             memory.extend(op.ex.mem.off, len(op.ex.mem.data))
 
         # geth convention is to return after memory expansion, but before the operation is applied
@@ -142,22 +137,21 @@ def to_trace_frames(
         if op.op in ["CALL", "DELEGATECALL", "STATICCALL"]:
             call_address = to_address(stack.values[-2][1])
 
-        if op.ex.mem:
-            memory.write(op.ex.mem.off, len(op.ex.mem.data), op.ex.mem.data)
+        if op.ex:
+            if op.ex.mem:
+                memory.write(op.ex.mem.off, len(op.ex.mem.data), op.ex.mem.data)
 
-        if num_pop := POPCODES.get(op.op):
-            stack.pop_any(num_pop)
+            if num_pop := POPCODES.get(op.op):
+                stack.pop_any(num_pop)
 
-        for item in op.ex.push:
-            stack.push_bytes(item)
+            for item in op.ex.push:
+                stack.push_bytes(item)
 
-        if op.ex.store:
-            storage[op.ex.store.key] = op.ex.store.val
+            if op.ex.store:
+                storage[op.ex.store.key] = op.ex.store.val
 
         if op.sub:
-            yield from to_trace_frames(
-                op.sub, depth=depth + 1, address=call_address, verbose=verbose
-            )
+            yield from to_trace_frames(op.sub, depth=depth + 1, address=call_address)
 
 
 def from_rpc_response(buffer: bytes) -> VMTrace:
