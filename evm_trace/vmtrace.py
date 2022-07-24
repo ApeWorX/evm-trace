@@ -56,7 +56,7 @@ class VMOperation(Struct):
 class VMExecutedOperation(Struct):
     used: int
     """The total gas used."""
-    push: List[uint256]
+    push: List[HexBytes]
     """The stack item placed, if any."""
     mem: Optional[MemoryDiff]
     """If altered, the memory delta."""
@@ -102,11 +102,12 @@ def dec_hook(type: Type, obj: Any) -> Any:
     if type is uint256:
         return uint256(obj, 16)
     if type is HexBytes:
-        return HexBytes(decode_hex(obj))
+        return HexBytes(obj)
 
 
 def to_address(value):
-    return to_checksum_address(decode_single("address", encode_single("uint256", value)))
+    # clear the padding and expand to 32 bytes
+    return to_checksum_address(value[-20:].rjust(20, b'\x00'))
 
 
 def to_trace_frames(
@@ -145,10 +146,10 @@ def to_trace_frames(
             memory.write(op.ex.mem.off, len(op.ex.mem.data), op.ex.mem.data)
 
         if num_pop := POPCODES.get(op.op):
-            stack.pop_ints(num_pop)
+            stack.pop_any(num_pop)
 
         for item in op.ex.push:
-            stack.push_int(item)
+            stack.push_bytes(item)
 
         if op.ex.store:
             storage[op.ex.store.key] = op.ex.store.val
