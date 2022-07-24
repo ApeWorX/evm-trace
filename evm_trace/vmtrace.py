@@ -94,7 +94,7 @@ class VMTraceFrame(Struct):
     op: str
     depth: int
     stack: List[int]
-    memory: List[int]
+    memory: List[HexBytes]
     storage: Dict[int, int]
 
 
@@ -111,16 +111,37 @@ def to_address(value):
 
 def to_trace_frames(
     trace: VMTrace,
-    depth: int = 0,
+    depth: int = 1,
     address: str = None,
+    verbose: bool = False,
 ) -> Iterator[VMTraceFrame]:
     memory = Memory()
     stack = Stack()
-    storage = {}
+    storage: Dict[int, int] = {}
 
     for op in trace.ops:
+        if verbose:
+            print(op)
+
+        if op.ex.mem:
+            memory.extend(op.ex.mem.off, len(op.ex.mem.data))
+
+        # geth convention is to return after memory expansion, but before the operation is applied
+        yield VMTraceFrame(
+            address=address,
+            pc=op.pc,
+            op=op.op,
+            depth=depth,
+            stack=[val for typ, val in stack.values],
+            memory=[HexBytes(memory.read_bytes(i, 32)) for i in range(0, len(memory), 32)],
+            storage=storage.copy(),
+        )
+
         if op.op in ["CALL", "DELEGATECALL", "STATICCALL"]:
             call_address = to_address(stack.values[-2][1])
+
+        if op.ex.mem:
+            memory.write(op.ex.mem.off, len(op.ex.mem.data), op.ex.mem.data)
 
         if num_pop := POPCODES.get(op.op):
             stack.pop_ints(num_pop)
@@ -128,25 +149,13 @@ def to_trace_frames(
         for item in op.ex.push:
             stack.push_int(item)
 
-        if op.ex.mem:
-            memory.extend(op.ex.mem.off, len(op.ex.mem.data))
-            memory.write(op.ex.mem.off, len(op.ex.mem.data), op.ex.mem.data)
-
         if op.ex.store:
             storage[op.ex.store.key] = op.ex.store.val
 
-        yield VMTraceFrame(
-            address=address,
-            pc=op.pc,
-            op=op.op,
-            depth=depth,
-            stack=[val for typ, val in stack.values],
-            memory=HexBytes(memory._bytes),
-            storage=storage.copy(),
-        )
-
         if op.sub:
-            yield from to_trace_frames(op.sub, depth=depth + 1, address=call_address)
+            yield from to_trace_frames(
+                op.sub, depth=depth + 1, address=call_address, verbose=verbose
+            )
 
 
 def from_rpc_response(buffer: bytes) -> VMTrace:
