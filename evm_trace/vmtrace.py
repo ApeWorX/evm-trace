@@ -91,7 +91,6 @@ class VMTraceFrame(Struct):
     """
     A synthetic trace frame represening the state at a step of execution.
     """
-
     address: str
     pc: int
     op: str
@@ -124,9 +123,12 @@ def to_trace_frames(
     Can be used as a much faster drop-in replacement for Geth-style traces.
 
     Arguments:
-        trace (VMTrace): a decoded trace from a `trace_` rpc.
-        depth (int): a depth of the call being processed. auto populated.
-        address (str): the address of the contract being executed. auto populated except the root call.
+        trace (VMTrace):
+            a decoded trace from a `trace_` rpc.
+        depth (int):
+            a depth of the call being processed. automatically populated.
+        address (str): 
+            the address of the contract being executed. auto populated except the root call.
         copy_memory (bool):
             whether to copy memory when returning trace frames. disable for a speedup when dealing
             with traces using a large amount of memory. when disabled, `VMTraceFrame.memory` becomes
