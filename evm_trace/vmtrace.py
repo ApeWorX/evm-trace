@@ -169,11 +169,7 @@ def to_trace_frames(
 
 
 class RPCResponse(Struct):
-    result: RPCTraceResult
-
-
-class RPCListResponse(Struct):
-    result: List[RPCTraceResult]
+    result: RPCTraceResult | List[RPCTraceResult]
 
 
 class RPCTraceResult(Struct):
@@ -189,11 +185,13 @@ def dec_hook(type: Type, obj: Any) -> Any:
         return HexBytes(obj)
 
 
-def from_rpc_response(buffer: bytes) -> VMTrace:
-    return Decoder(RPCResponse, dec_hook=dec_hook).decode(buffer).result.vmTrace
+def from_rpc_response(buffer: bytes) -> VMTrace | List[VMTrace]:
+    """
+    Decode structured data from a raw `trace_replayTransaction` or `trace_replayBlockTransactions`.
+    """
+    resp = Decoder(RPCResponse, dec_hook=dec_hook).decode(buffer)
 
-
-def from_list_rpc_response(buffer: bytes) -> List[VMTrace]:
-    return [
-        item.vmTrace for item in Decoder(RPCListResponse, dec_hook=dec_hook).decode(buffer).result
-    ]
+    if isinstance(resp.result, list):
+        return [i.vmTrace for i in resp.result]
+    else:
+        return resp.result.vmTrace
