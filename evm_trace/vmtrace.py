@@ -81,6 +81,10 @@ class RPCResponse(Struct):
     result: RPCTraceResult
 
 
+class RPCListResponse(Struct):
+    result: List[RPCTraceResult]
+
+
 class RPCTraceResult(Struct):
     trace: Optional[List]
     vmTrace: VMTrace
@@ -185,5 +189,11 @@ def to_trace_frames(
             )
 
 
-def from_rpc_response(buffer: bytes) -> VMTrace:
-    return Decoder(RPCResponse, dec_hook=dec_hook).decode(buffer).result.vmTrace
+def from_rpc_response(buffer: bytes, is_list: bool = False) -> Union[VMTrace, List[VMTrace]]:
+    if is_list:
+        return [
+            item.vmTrace
+            for item in Decoder(RPCListResponse, dec_hook=dec_hook).decode(buffer).result
+        ]
+    else:
+        return Decoder(RPCResponse, dec_hook=dec_hook).decode(buffer).result.vmTrace
