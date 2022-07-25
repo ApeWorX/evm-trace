@@ -77,20 +77,6 @@ class StorageDiff(Struct):
     """What the value has been changed to."""
 
 
-class RPCResponse(Struct):
-    result: RPCTraceResult
-
-
-class RPCListResponse(Struct):
-    result: List[RPCTraceResult]
-
-
-class RPCTraceResult(Struct):
-    trace: Optional[List]
-    vmTrace: VMTrace
-    stateDiff: Optional[Dict]
-
-
 class VMTraceFrame(Struct):
     """
     A synthetic trace frame represening the state at a step of execution.
@@ -103,13 +89,6 @@ class VMTraceFrame(Struct):
     stack: List[int]
     memory: Union[bytes, memoryview]
     storage: Dict[int, int]
-
-
-def dec_hook(type: Type, obj: Any) -> Any:
-    if type is uint256:
-        return uint256(obj, 16)
-    if type is HexBytes:
-        return HexBytes(obj)
 
 
 def to_address(value):
@@ -189,11 +168,32 @@ def to_trace_frames(
             )
 
 
-def from_rpc_response(buffer: bytes, is_list: bool = False) -> Union[VMTrace, List[VMTrace]]:
-    if is_list:
-        return [
-            item.vmTrace
-            for item in Decoder(RPCListResponse, dec_hook=dec_hook).decode(buffer).result
-        ]
-    else:
-        return Decoder(RPCResponse, dec_hook=dec_hook).decode(buffer).result.vmTrace
+class RPCResponse(Struct):
+    result: RPCTraceResult
+
+
+class RPCListResponse(Struct):
+    result: List[RPCTraceResult]
+
+
+class RPCTraceResult(Struct):
+    trace: Optional[List]
+    vmTrace: VMTrace
+    stateDiff: Optional[Dict]
+
+
+def dec_hook(type: Type, obj: Any) -> Any:
+    if type is uint256:
+        return uint256(obj, 16)
+    if type is HexBytes:
+        return HexBytes(obj)
+
+
+def from_rpc_response(buffer: bytes, is_list: bool = False) -> VMTrace:
+    return Decoder(RPCResponse, dec_hook=dec_hook).decode(buffer).result.vmTrace
+
+
+def from_list_rpc_response(buffer: bytes) -> List[VMTrace]:
+    return [
+        item.vmTrace for item in Decoder(RPCListResponse, dec_hook=dec_hook).decode(buffer).result
+    ]
