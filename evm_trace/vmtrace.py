@@ -189,7 +189,7 @@ def dec_hook(type: Type, obj: Any) -> Any:
         return HexBytes(obj)
 
 
-def from_rpc_response(buffer: bytes, is_list: bool = False) -> VMTrace:
+def from_rpc_response(buffer: bytes) -> VMTrace:
     return Decoder(RPCResponse, dec_hook=dec_hook).decode(buffer).result.vmTrace
 
 
