@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional, Type
+from typing import Any, Dict, Iterator, List, Optional, Type, Union
 
 from eth.vm.memory import Memory  # type: ignore
 from eth.vm.stack import Stack  # type: ignore
@@ -54,7 +54,7 @@ class VMOperation(Struct):
 
 class VMExecutedOperation(Struct):
     used: int
-    """The total gas used."""
+    """The amount of remaining gas."""
     push: List[HexBytes]
     """The stack item placed, if any."""
     mem: Optional[MemoryDiff]
@@ -88,12 +88,16 @@ class RPCTraceResult(Struct):
 
 
 class VMTraceFrame(Struct):
+    """
+    A synthetic trace frame represening the state at a step of execution.
+    """
+
     address: str
     pc: int
     op: str
     depth: int
     stack: List[int]
-    memory: bytes
+    memory: Union[bytes, memoryview]
     storage: Dict[int, int]
 
 
@@ -113,11 +117,33 @@ def to_trace_frames(
     trace: VMTrace,
     depth: int = 1,
     address: str = None,
+    copy_memory: bool = True,
 ) -> Iterator[VMTraceFrame]:
+    """
+    Replays a VMTrace and yields trace frames at each step of the execution.
+    Can be used as a much faster drop-in replacement for Geth-style traces.
+
+    Arguments:
+        trace (VMTrace): a decoded trace from a `trace_` rpc.
+        depth (int): a depth of the call being processed. auto populated.
+        address (str): the address of the contract being executed. auto populated except the root call.
+        copy_memory (bool):
+            whether to copy memory when returning trace frames. disable for a speedup when dealing
+            with traces using a large amount of memory. when disabled, `VMTraceFrame.memory` becomes
+            `memoryview` instead of `bytes`, which works like a pointer at the memory `bytearray`.
+            this means you must process the frames immediately, otherwise you risk memory value
+            mutating further into execution.
+
+    Returns:
+        Iterator[VMTraceFrame]:
+            an iterator of synthetic traces which can be used as a drop-in replacement for
+            Geth-style traces. also contains the address of the current contract context.
+    """
     memory = Memory()
     stack = Stack()
     storage: Dict[int, int] = {}
     call_address = None
+    read_memory = memory.read_bytes if copy_memory else memory.read
 
     for op in trace.ops:
         if op.ex and op.ex.mem:
@@ -130,7 +156,7 @@ def to_trace_frames(
             op=op.op,
             depth=depth,
             stack=[val for typ, val in stack.values],
-            memory=memory.read_bytes(0, len(memory)),
+            memory=read_memory(0, len(memory)),
             storage=storage.copy(),
         )
 
@@ -151,7 +177,9 @@ def to_trace_frames(
                 storage[op.ex.store.key] = op.ex.store.val
 
         if op.sub:
-            yield from to_trace_frames(op.sub, depth=depth + 1, address=call_address)
+            yield from to_trace_frames(
+                op.sub, depth=depth + 1, address=call_address, copy_memory=copy_memory
+            )
 
 
 def from_rpc_response(buffer: bytes) -> VMTrace:
