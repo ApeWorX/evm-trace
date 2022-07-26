@@ -58,9 +58,8 @@ setup(
         "pydantic>=1.9.0,<2.0",
         "hexbytes>=0.2.2,<1.0.0",
         "eth-utils>=1.10.0",
-        "msgspec>=0.7.1",
     ],  # NOTE: Add 3rd party libraries here
-    python_requires=">=3.8,<4",
+    python_requires=">=3.7.2,<4",
     extras_require=extras_require,
     py_modules=["evm_trace"],
     license="Apache-2.0",
@@ -76,6 +75,7 @@ setup(
         "Operating System :: MacOS",
         "Operating System :: POSIX",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
