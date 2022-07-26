@@ -153,7 +153,8 @@ def to_trace_frames(
             if op.ex.mem:
                 memory.write(op.ex.mem.off, len(op.ex.mem.data), op.ex.mem.data)
 
-            if num_pop := POPCODES.get(op.op):
+            num_pop = POPCODES.get(op.op)
+            if num_pop:
                 stack.pop_any(num_pop)
 
             for item in op.ex.push:
@@ -169,7 +170,7 @@ def to_trace_frames(
 
 
 class RPCResponse(Struct):
-    result: RPCTraceResult | List[RPCTraceResult]
+    result: Union[RPCTraceResult, List[RPCTraceResult]]
 
 
 class RPCTraceResult(Struct):
@@ -185,7 +186,7 @@ def dec_hook(type: Type, obj: Any) -> Any:
         return HexBytes(obj)
 
 
-def from_rpc_response(buffer: bytes) -> VMTrace | List[VMTrace]:
+def from_rpc_response(buffer: bytes) -> Union[VMTrace, List[VMTrace]]:
     """
     Decode structured data from a raw `trace_replayTransaction` or `trace_replayBlockTransactions`.
     """
