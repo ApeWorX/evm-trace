@@ -103,7 +103,7 @@ def to_address(value):
 def to_trace_frames(
     trace: VMTrace,
     depth: int = 1,
-    address: str = None,
+    address: str = "",
     copy_memory: bool = True,
 ) -> Iterator[VMTraceFrame]:
     """
@@ -132,7 +132,7 @@ def to_trace_frames(
     memory = Memory()
     stack = Stack()
     storage: Dict[int, int] = {}
-    call_address = None
+    call_address = ""
     read_memory = memory.read_bytes if copy_memory else memory.read
 
     for op in trace.ops:
