@@ -1,54 +1,81 @@
-from typing import Dict, List
+from typing import Any, Dict, List
+
+from hexbytes import HexBytes
+from pydantic import BaseModel, ValidationError, validator
 
 from evm_trace.base import CallTreeNode
+from evm_trace.utils import _convert_hexbytes
 
-Address = str
-Calldata = bytes
-GasUsage = int
-
-GasReport = Dict[Address, Dict[Calldata, List[GasUsage]]]
+Report = Dict[str, Dict[str, List[int]]]
 
 
-def extract_gas_report(calltree: CallTreeNode) -> GasReport:
+class Address(BaseModel):
+    address: Any
+
+    @validator("address", pre=True)
+    def validate_hexbytes(cls, v) -> HexBytes:
+        """
+        A valid address is 20 bytes.
+        """
+        value = _convert_hexbytes(cls, v)
+
+        if len(v) != 20:
+            raise ValidationError
+
+        return value
+
+
+class MethodId(BaseModel):
+    method_id: Any
+
+    @validator("method_id", pre=True)
+    def validate_hexbytes(cls, v) -> HexBytes:
+        """
+        Method ids are 4 bytes at the beginning of calldata.
+        """
+        value = _convert_hexbytes(cls, v)
+
+        if len(value) > 4:
+            value = value[:4]
+
+        return value
+
+
+def get_gas_report(calltree: CallTreeNode) -> Report:
     """
-    Extracts a gas report object from a :class:`~evm_trace.base.CallTreeNode`
+    Extracts a gas report object from a :class:`~evm_trace.base.CallTreeNode`.
 
     Args:
         calltree (:class:`~evm_trace.base.CallTreeNode`): extractable call tree
 
     Returns:
-        :class:`~evm_trace.gas.GasReport`: Gas report structure from a call tree.
+        :class:`~evm_trace.gas.Report`: Gas report structure from a call tree.
     """
-    report = {
-        calltree.address: {calltree.calldata: [calltree.gas_cost] if calltree.gas_cost else []}
-    }
+    address = Address(address=calltree.address)
+    method_id = MethodId(method_id=calltree.calldata)
 
-    for call in calltree.calls:
-        report = combine_gas_reports(report, extract_gas_report(call))
+    report = {str(address): {str(method_id): [calltree.gas_cost] if calltree.gas_cost else []}}
+
+    for node in calltree.calls:
+        report = _merge_reports(report, get_gas_report(node))
 
     return report
 
 
-def combine_gas_reports(report1: GasReport, report2: GasReport) -> GasReport:
+def _merge_reports(report1: Report, report2: Report) -> Report:
     """
-    Combines two gas report objects into a single gas report. :class:`~evm_trace.base.CallTreeNode`
-
-    Args:
-        report1 (:class:`~evm_trace.gas.GasReport`): the first instance of GasReport
-        report2 (:class:`~evm_trace.gas.GasReport`): the second instance of GasReport
-
-    Returns:
-        :class:`~evm_trace.gas.GasReport`: A combined gas report structure.
+    Private helper method for merging two reports.
     """
+    merged_report: Report = report1.copy()
 
-    for address, calldata_dict in report2.items():
-        if address in report1:
-            for calldata, gas_cost_list in report2[address].items():
-                if calldata in report1[address]:
-                    report1[address][calldata].extend(gas_cost_list)
+    for outer_key, inner_dict in report2.items():
+        if outer_key in merged_report:
+            for inner_key, inner_list in report2[outer_key].items():
+                if inner_key in merged_report[outer_key]:
+                    merged_report[outer_key][inner_key].extend(inner_list)
                 else:
-                    report1[address][calldata] = gas_cost_list
+                    merged_report[outer_key][inner_key] = inner_list
         else:
-            report1[address] = calldata_dict
+            merged_report[outer_key] = inner_dict
 
-    return report1
+    return merged_report

@@ -3,17 +3,11 @@ from typing import Any, Dict, Iterator, List, Optional, Type
 
 from eth_utils import to_int
 from hexbytes import HexBytes
-from pydantic import BaseModel, Field, ValidationError, validator
+from pydantic import BaseModel, Field, validator
 
 from evm_trace.display import DisplayableCallTreeNode
 from evm_trace.enums import CallType
-
-
-def _convert_hexbytes(cls, v: Any) -> HexBytes:
-    try:
-        return HexBytes(v)
-    except ValueError:
-        raise ValidationError(f"Value '{v}' could not be converted to Hexbytes.", cls)
+from evm_trace.utils import _convert_hexbytes
 
 
 class TraceFrame(BaseModel):
