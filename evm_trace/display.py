@@ -35,7 +35,7 @@ class DisplayableCallTreeNode(object):
             address = to_checksum_address(address_hex_str) if address_hex_str else None
         except ImportError:
             # Ignore checksumming if user does not have eth-hash backend installed.
-            address = address_hex_str
+            address = address_hex_str  # type: ignore
 
         cost = self.call.gas_cost
         call_path = str(address) if address else ""

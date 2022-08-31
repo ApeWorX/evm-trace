@@ -1,18 +1,20 @@
 import pytest
+from ethpm_types import HexBytes
 from pydantic import ValidationError
 
 from evm_trace import CallTreeNode
 from evm_trace.gas import GasReport, GasReportValidation, _merge_reports, get_gas_report
 
+# Simplified version of gas reports only for testing purposes
 report1: GasReport = {
-    "address1": {"willcombine": [1]},
-    "address2": {"different": [2]},
+    HexBytes("1"): {HexBytes("10"): [1]},
+    HexBytes("2"): {HexBytes("20"): [2]},
 }
 
 report2: GasReport = {
-    "address1": {"willcombine": [1]},
-    "address2": {"willNOTcombine": [2]},
-    "address3": {"notincludedinreport1": [3]},
+    HexBytes("1"): {HexBytes("10"): [1]},
+    HexBytes("2"): {HexBytes("21"): [2]},
+    HexBytes("3"): {HexBytes("30"): [3]},
 }
 
 
@@ -28,9 +30,9 @@ def test_merged_reports():
     merged = _merge_reports(report1=report1, report2=report2)
 
     assert merged == {
-        "address1": {"willcombine": [1, 1]},
-        "address2": {"different": [2], "willNOTcombine": [2]},
-        "address3": {"notincludedinreport1": [3]},
+        HexBytes("0x01"): {HexBytes("0x10"): [1, 1]},
+        HexBytes("0x02"): {HexBytes("0x20"): [2], HexBytes("0x21"): [2]},
+        HexBytes("0x03"): {HexBytes("0x30"): [3]},
     }
 
 

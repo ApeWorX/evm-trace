@@ -57,13 +57,13 @@ def get_gas_report(calltree: CallTreeNode) -> GasReport:
 
 
 def _merge_reports(
-    report1: Dict[str, Dict[str, List[Optional[int]]]],
-    report2: Dict[str, Dict[str, List[Optional[int]]]],
-) -> Dict[str, Dict[str, List[Optional[int]]]]:
+    report1: GasReport,
+    report2: GasReport,
+) -> GasReport:
     """
     Private helper method for merging two reports.
     """
-    merged_report: Dict[str, Dict[str, List[Optional[int]]]] = report1.copy()
+    merged_report: GasReport = report1.copy()
 
     for outer_key, inner_dict in report2.items():
         if outer_key in merged_report:

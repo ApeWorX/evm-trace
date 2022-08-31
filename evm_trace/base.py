@@ -147,7 +147,7 @@ def _create_node_from_call(
                     offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
                 )
 
-            child_node = _create_node_from_call(trace=trace, **child_node_kwargs)
+            child_node = _create_node_from_call(trace=trace, **child_node_kwargs)  # type: ignore
             node.calls.append(child_node)
 
         # TODO: Handle internal nodes using JUMP and JUMPI
