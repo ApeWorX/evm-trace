@@ -1,13 +1,12 @@
 import math
-from typing import Any, Dict, Iterator, List, Optional, Type
+from typing import Dict, Iterator, List, Optional, Type
 
 from eth_utils import to_int
-from hexbytes import HexBytes
-from pydantic import BaseModel, Field, validator
+from ethpm_types import BaseModel, HexBytes
+from pydantic import Field
 
 from evm_trace.display import DisplayableCallTreeNode
 from evm_trace.enums import CallType
-from evm_trace.utils import _convert_hexbytes
 
 
 class TraceFrame(BaseModel):
@@ -16,28 +15,20 @@ class TraceFrame(BaseModel):
     gas: int
     gas_cost: int = Field(alias="gasCost")
     depth: int
-    stack: List[Any]
-    memory: List[Any]
-    storage: Dict[Any, Any] = {}
-
-    @validator("stack", "memory", pre=True, each_item=True)
-    def convert_hexbytes(cls, v) -> HexBytes:
-        return _convert_hexbytes(cls, v)
-
-    @validator("storage", pre=True)
-    def convert_hexbytes_dict(cls, v) -> Dict[HexBytes, HexBytes]:
-        return {_convert_hexbytes(cls, k): _convert_hexbytes(cls, val) for k, val in v.items()}
+    stack: List[HexBytes]
+    memory: List[HexBytes]
+    storage: Dict[HexBytes, HexBytes] = {}
 
 
 class CallTreeNode(BaseModel):
     call_type: CallType
-    address: Any
+    address: HexBytes = HexBytes(b"")
     value: int = 0
     depth: int = 0
     gas_limit: Optional[int]
     gas_cost: Optional[int]  # calculated from call starting and return
-    calldata: Any = HexBytes(b"")
-    returndata: Any = HexBytes(b"")
+    calldata: HexBytes = HexBytes(b"")
+    returndata: HexBytes = HexBytes(b"")
     calls: List["CallTreeNode"] = []
     selfdestruct: bool = False
     failed: bool = False
@@ -46,10 +37,6 @@ class CallTreeNode(BaseModel):
     @property
     def display_nodes(self) -> Iterator[DisplayableCallTreeNode]:
         return self.display_cls.make_tree(self)
-
-    @validator("address", "calldata", "returndata", pre=True)
-    def validate_hexbytes(cls, v) -> HexBytes:
-        return _convert_hexbytes(cls, v)
 
     def __str__(self) -> str:
         return "\n".join([str(t) for t in self.display_nodes])

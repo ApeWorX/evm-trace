@@ -1,47 +1,40 @@
-from typing import Any, Dict, List
+from typing import Dict, List, Optional
 
-from hexbytes import HexBytes
-from pydantic import BaseModel, ValidationError, validator
+from ethpm_types import BaseModel, HexBytes
+from pydantic import validator
 
 from evm_trace.base import CallTreeNode
-from evm_trace.utils import _convert_hexbytes
 
-Report = Dict[str, Dict[str, List[int]]]
+GasReport = Dict[HexBytes, Dict[HexBytes, List[Optional[int]]]]
 
 
-class Address(BaseModel):
-    address: Any
+class GasReportValidation(BaseModel):
+    address: HexBytes
+    method_id: HexBytes
+    gas_cost: Optional[int]
 
-    @validator("address", pre=True)
-    def validate_hexbytes(cls, v) -> HexBytes:
+    @validator("address")
+    def validate_address(cls, v) -> HexBytes:
         """
         A valid address is 20 bytes.
         """
-        value = _convert_hexbytes(cls, v)
-
         if len(v) != 20:
-            raise ValidationError
+            raise ValueError("`address` should be 20 bytes.")
 
-        return value
+        return v
 
-
-class MethodId(BaseModel):
-    method_id: Any
-
-    @validator("method_id", pre=True)
-    def validate_hexbytes(cls, v) -> HexBytes:
+    @validator("method_id")
+    def validate_method_id(cls, v) -> HexBytes:
         """
         Method ids are 4 bytes at the beginning of calldata.
         """
-        value = _convert_hexbytes(cls, v)
+        if len(v) > 4:
+            v = v[:4]
 
-        if len(value) > 4:
-            value = value[:4]
-
-        return value
+        return v
 
 
-def get_gas_report(calltree: CallTreeNode) -> Report:
+def get_gas_report(calltree: CallTreeNode) -> GasReport:
     """
     Extracts a gas report object from a :class:`~evm_trace.base.CallTreeNode`.
 
@@ -51,10 +44,11 @@ def get_gas_report(calltree: CallTreeNode) -> Report:
     Returns:
         :class:`~evm_trace.gas.Report`: Gas report structure from a call tree.
     """
-    address = Address(address=calltree.address)
-    method_id = MethodId(method_id=calltree.calldata)
+    valid = GasReportValidation(
+        address=calltree.address, method_id=calltree.calldata, gas_cost=calltree.gas_cost
+    )
 
-    report = {str(address): {str(method_id): [calltree.gas_cost] if calltree.gas_cost else []}}
+    report = {valid.address: {valid.method_id: [valid.gas_cost]}}
 
     for node in calltree.calls:
         report = _merge_reports(report, get_gas_report(node))
@@ -62,11 +56,14 @@ def get_gas_report(calltree: CallTreeNode) -> Report:
     return report
 
 
-def _merge_reports(report1: Report, report2: Report) -> Report:
+def _merge_reports(
+    report1: Dict[str, Dict[str, List[Optional[int]]]],
+    report2: Dict[str, Dict[str, List[Optional[int]]]],
+) -> Dict[str, Dict[str, List[Optional[int]]]]:
     """
     Private helper method for merging two reports.
     """
-    merged_report: Report = report1.copy()
+    merged_report: Dict[str, Dict[str, List[Optional[int]]]] = report1.copy()
 
     for outer_key, inner_dict in report2.items():
         if outer_key in merged_report:
