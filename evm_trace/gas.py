@@ -1,12 +1,12 @@
 import copy
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from ethpm_types import BaseModel, HexBytes
 from pydantic import validator
 
 from evm_trace.base import CallTreeNode
 
-GasReport = Dict[HexBytes, Dict[HexBytes, List[int]]]
+GasReport = Dict[Any, Dict[Any, List[int]]]
 
 
 class GasReportValidation(BaseModel):
