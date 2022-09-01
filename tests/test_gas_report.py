@@ -1,11 +1,9 @@
 from typing import List
 
-import pytest
 from ethpm_types import HexBytes
-from pydantic import ValidationError
 
 from evm_trace import CallTreeNode
-from evm_trace.gas import GasReport, GasReportValidation, _merge_reports, get_gas_report
+from evm_trace.gas import GasReport, get_gas_report, merge_reports
 
 # Simplified version of gas reports only for testing purposes
 reports: List[GasReport] = [
@@ -30,32 +28,10 @@ def test_builds_gas_report(call_tree_data):
 
 
 def test_merged_reports():
-    merged = _merge_reports(reports=reports)
+    merged = merge_reports(reports=reports)
 
     assert merged == {
         HexBytes("0x01"): {HexBytes("0x10"): [1, 1]},
         HexBytes("0x02"): {HexBytes("0x20"): [2], HexBytes("0x21"): [2]},
         HexBytes("0x03"): {HexBytes("0x30"): [3]},
     }
-
-
-@pytest.mark.parametrize(
-    "test_data",
-    (
-        {"address": "d8dA6BF269"},
-        {"address": "0x71c7656ec7ab88b098defb751b7401b5f6d8976f"},
-    ),
-)
-def test_gas_report_validation_fail(test_data):
-    with pytest.raises(ValidationError):
-        GasReportValidation(**test_data)
-
-
-def test_gas_report_validation_pass():
-    valid = GasReportValidation(
-        address="71c7656ec7ab88b098defb751b7401b5f6d8976f", method_id=b"88888888", gas_cost=10000
-    )
-
-    assert valid.address.hex() == "0x71c7656ec7ab88b098defb751b7401b5f6d8976f"
-    assert valid.method_id.hex() == "0x38383838"
-    assert valid.gas_cost == 10000

@@ -1,38 +1,9 @@
 import copy
 from typing import Any, Dict, List
 
-from ethpm_types import BaseModel, HexBytes
-from pydantic import validator
-
 from evm_trace.base import CallTreeNode
 
 GasReport = Dict[Any, Dict[Any, List[int]]]
-
-
-class GasReportValidation(BaseModel):
-    address: HexBytes
-    method_id: HexBytes
-    gas_cost: int
-
-    @validator("address")
-    def validate_address(cls, v) -> HexBytes:
-        """
-        A valid address is 20 bytes.
-        """
-        if len(v) != 20:
-            raise ValueError("`address` should be 20 bytes.")
-
-        return v
-
-    @validator("method_id")
-    def validate_method_id(cls, v) -> HexBytes:
-        """
-        Method ids are 4 bytes at the beginning of calldata.
-        """
-        if len(v) > 4:
-            v = v[:4]
-
-        return v
 
 
 def get_gas_report(calltree: CallTreeNode) -> GasReport:
@@ -45,20 +16,18 @@ def get_gas_report(calltree: CallTreeNode) -> GasReport:
     Returns:
         :class:`~evm_trace.gas.Report`: Gas report structure from a call tree.
     """
-    valid = GasReportValidation(
-        address=calltree.address, method_id=calltree.calldata, gas_cost=calltree.gas_cost
-    )
+    report = {
+        calltree.address: {calltree.calldata[:4]: [calltree.gas_cost] if calltree.gas_cost else []}
+    }
 
-    report = {valid.address: {valid.method_id: [valid.gas_cost]}}
-
-    report = _merge_reports([report, *map(get_gas_report, calltree.calls)])
+    report = merge_reports([report, *map(get_gas_report, calltree.calls)])
 
     return report
 
 
-def _merge_reports(reports: List[GasReport]) -> GasReport:
+def merge_reports(reports: List[GasReport]) -> GasReport:
     """
-    Private helper method for merging two reports.
+    Merge method for merging a list of gas reports and combining a list of gas costs.
     """
     merged_report: GasReport = copy.deepcopy(reports.pop(0))
 
