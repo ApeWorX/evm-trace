@@ -49,7 +49,7 @@ class CallTreeNode(BaseModel):
 
 
 def get_calltree_from_geth_trace(
-    trace: Iterator[TraceFrame], show_internal=False, **root_node_kwargs
+    trace: Iterator[TraceFrame], show_internal: bool = False, **root_node_kwargs
 ) -> CallTreeNode:
     """
     Creates a CallTreeNode from a given transaction trace.
@@ -147,7 +147,9 @@ def _create_node_from_call(
                     offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
                 )
 
-            child_node = _create_node_from_call(trace=trace, **child_node_kwargs)  # type: ignore
+            child_node = _create_node_from_call(
+                trace=trace, show_internal=show_internal, **child_node_kwargs
+            )
             node.calls.append(child_node)
 
         # TODO: Handle internal nodes using JUMP and JUMPI

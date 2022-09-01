@@ -1,17 +1,18 @@
-from typing import Dict, List, Optional
+import copy
+from typing import Dict, List
 
 from ethpm_types import BaseModel, HexBytes
 from pydantic import validator
 
 from evm_trace.base import CallTreeNode
 
-GasReport = Dict[HexBytes, Dict[HexBytes, List[Optional[int]]]]
+GasReport = Dict[HexBytes, Dict[HexBytes, List[int]]]
 
 
 class GasReportValidation(BaseModel):
     address: HexBytes
     method_id: HexBytes
-    gas_cost: Optional[int]
+    gas_cost: int
 
     @validator("address")
     def validate_address(cls, v) -> HexBytes:
@@ -39,7 +40,7 @@ def get_gas_report(calltree: CallTreeNode) -> GasReport:
     Extracts a gas report object from a :class:`~evm_trace.base.CallTreeNode`.
 
     Args:
-        calltree (:class:`~evm_trace.base.CallTreeNode`): extractable call tree
+        calltree (:class:`~evm_trace.base.CallTreeNode`): call tree used for gas report.
 
     Returns:
         :class:`~evm_trace.gas.Report`: Gas report structure from a call tree.
@@ -50,29 +51,29 @@ def get_gas_report(calltree: CallTreeNode) -> GasReport:
 
     report = {valid.address: {valid.method_id: [valid.gas_cost]}}
 
-    for node in calltree.calls:
-        report = _merge_reports(report, get_gas_report(node))
+    report = _merge_reports([report, *map(get_gas_report, calltree.calls)])
 
     return report
 
 
-def _merge_reports(
-    report1: GasReport,
-    report2: GasReport,
-) -> GasReport:
+def _merge_reports(reports: List[GasReport]) -> GasReport:
     """
     Private helper method for merging two reports.
     """
-    merged_report: GasReport = report1.copy()
+    merged_report: GasReport = copy.deepcopy(reports.pop(0))
 
-    for outer_key, inner_dict in report2.items():
-        if outer_key in merged_report:
-            for inner_key, inner_list in report2[outer_key].items():
-                if inner_key in merged_report[outer_key]:
-                    merged_report[outer_key][inner_key].extend(inner_list)
-                else:
-                    merged_report[outer_key][inner_key] = inner_list
-        else:
-            merged_report[outer_key] = inner_dict
+    if len(reports) < 1:
+        return merged_report
+
+    for report in reports:
+        for outer_key, inner_dict in report.items():
+            if outer_key in merged_report:
+                for inner_key, inner_list in report[outer_key].items():
+                    if inner_key in merged_report[outer_key]:
+                        merged_report[outer_key][inner_key].extend(inner_list)
+                    else:
+                        merged_report[outer_key][inner_key] = inner_list
+            else:
+                merged_report[outer_key] = inner_dict
 
     return merged_report
