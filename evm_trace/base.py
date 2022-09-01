@@ -22,13 +22,13 @@ class TraceFrame(BaseModel):
 
 class CallTreeNode(BaseModel):
     call_type: CallType
-    address: HexBytes = HexBytes(b"")
+    address: HexBytes = HexBytes("")
     value: int = 0
     depth: int = 0
     gas_limit: Optional[int]
     gas_cost: Optional[int]  # calculated from call starting and return
-    calldata: HexBytes = HexBytes(b"")
-    returndata: HexBytes = HexBytes(b"")
+    calldata: HexBytes = HexBytes("")
+    returndata: HexBytes = HexBytes("")
     calls: List["CallTreeNode"] = []
     selfdestruct: bool = False
     failed: bool = False
