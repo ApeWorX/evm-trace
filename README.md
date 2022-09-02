@@ -98,6 +98,22 @@ class CustomDisplay(DisplayableCallTreeNode):
 calltree = get_calltree_from_geth_trace(trace, display_cls=CustomDisplay)
 ```
 
+### Gas Reports
+
+If you are using a node that supports creating traces, you can get a gas report.
+
+```python
+from evm_trace.gas import get_gas_report
+
+# see examples above for creating a calltree
+calltree = get_calltree_from_geth_trace(trace, **root_node_kwargs)
+
+gas_report = get_gas_report(calltree)
+```
+
+You can use the `merge_reports` method  to combine a list of reports into a single report.
+Pass a List[Dict[Any, Dict[Any, List[int]]]] to combine reports, where List[int] is the gas cost.
+
 ## Development
 
 This project is in development and should be considered a beta.

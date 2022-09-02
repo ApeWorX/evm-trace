@@ -58,7 +58,7 @@ setup(
         "pydantic>=1.10.1,<2.0",
         "hexbytes>=0.3.0,<1.0.0",
         "eth-utils>=2.0.0",
-        "ethpm-types>=0.3.6,<0.4.0",
+        "ethpm-types>=0.3.7,<0.4.0",
     ],
     python_requires=">=3.7.2,<4",
     extras_require=extras_require,
