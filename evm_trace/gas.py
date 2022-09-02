@@ -36,13 +36,14 @@ def merge_reports(reports: List[GasReport]) -> GasReport:
 
     for report in reports:
         for outer_key, inner_dict in report.items():
-            if outer_key in merged_report:
-                for inner_key, inner_list in report[outer_key].items():
-                    if inner_key in merged_report[outer_key]:
-                        merged_report[outer_key][inner_key].extend(inner_list)
-                    else:
-                        merged_report[outer_key][inner_key] = inner_list
-            else:
+            if outer_key not in merged_report:
                 merged_report[outer_key] = inner_dict
+                continue
+
+            for inner_key, inner_list in report[outer_key].items():
+                if inner_key in merged_report[outer_key]:
+                    merged_report[outer_key][inner_key].extend(inner_list)
+                else:
+                    merged_report[outer_key][inner_key] = inner_list
 
     return merged_report
