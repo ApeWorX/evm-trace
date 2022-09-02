@@ -19,26 +19,25 @@ def get_gas_report(calltree: CallTreeNode) -> GasReport:
     report = {
         calltree.address: {calltree.calldata[:4]: [calltree.gas_cost] if calltree.gas_cost else []}
     }
-
-    report = merge_reports(report, *map(get_gas_report, calltree.calls))
-
-    return report
+    return merge_reports(report, *map(get_gas_report, calltree.calls))
 
 
-def merge_reports(*reports: List[GasReport]) -> GasReport:
+def merge_reports(*reports: GasReport) -> GasReport:
     """
     Merge method for merging a list of gas reports and combining a list of gas costs.
     """
-    if len(reports) < 1:
+    reports_ls = list(reports)
+    if len(reports_ls) < 1:
         raise ValueError("Must be 2 or more reports to merge")
-    elif len(reports) == 1:
-        return reports[0]
-    merged_report: GasReport = copy.deepcopy(reports.pop(0))
+    elif len(reports_ls) == 1:
+        return reports_ls[0]
 
-    if len(reports) < 1:
+    merged_report: GasReport = copy.deepcopy(reports_ls.pop(0))
+
+    if len(reports_ls) < 1:
         return merged_report
 
-    for report in reports:
+    for report in reports_ls:
         for outer_key, inner_dict in report.items():
             if outer_key not in merged_report:
                 merged_report[outer_key] = inner_dict
