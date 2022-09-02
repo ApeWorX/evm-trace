@@ -28,7 +28,7 @@ def test_builds_gas_report(call_tree_data):
 
 
 def test_merged_reports():
-    merged = merge_reports(reports=reports)
+    merged = merge_reports(*reports)
 
     assert merged == {
         HexBytes("0x01"): {HexBytes("0x10"): [1, 1]},
