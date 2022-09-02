@@ -29,6 +29,10 @@ def merge_reports(*reports: List[GasReport]) -> GasReport:
     """
     Merge method for merging a list of gas reports and combining a list of gas costs.
     """
+    if len(reports) < 1:
+        raise ValueError("Must be 2 or more reports to merge")
+    elif len(reports) == 1:
+        return reports[0]
     merged_report: GasReport = copy.deepcopy(reports.pop(0))
 
     if len(reports) < 1:
