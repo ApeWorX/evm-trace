@@ -112,7 +112,7 @@ gas_report = get_gas_report(calltree)
 ```
 
 For a more custom report, use the `merge_reports` method to combine a list of reports into a single report.
-Pass any `List[Dict[Any, Dict[Any, List[int]]]]` to combine reports where `List[int]` is the gas used.
+Pass two or more `Dict[Any, Dict[Any, List[int]]]` to combine reports where `List[int]` is the gas used.
 
 Customize the values of `Any` accordingly:
 
