@@ -20,7 +20,7 @@ def get_gas_report(calltree: CallTreeNode) -> GasReport:
         calltree.address: {calltree.calldata[:4]: [calltree.gas_cost] if calltree.gas_cost else []}
     }
 
-    report = merge_reports([report, *map(get_gas_report, calltree.calls)])
+    report = merge_reports(report, *map(get_gas_report, calltree.calls))
 
     return report
 
