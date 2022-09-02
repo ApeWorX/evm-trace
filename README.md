@@ -111,8 +111,21 @@ calltree = get_calltree_from_geth_trace(trace, **root_node_kwargs)
 gas_report = get_gas_report(calltree)
 ```
 
-You can use the `merge_reports` method  to combine a list of reports into a single report.
-Pass a List[Dict[Any, Dict[Any, List[int]]]] to combine reports, where List[int] is the gas cost.
+For a more custom report, use the `merge_reports` method to combine a list of reports into a single report.
+Pass any `List[Dict[Any, Dict[Any, List[int]]]]` to combine reports where `List[int]` is the gas used.
+
+Customize the values of `Any` accordingly:
+
+1. The first `Any` represents the bytes from the address.
+2. The second `Any` represents the method selector.
+
+For example, you may replace addresses with token names or selector bytes with signature call strings.
+
+Import the method like so:
+
+```python
+from evm_trace.gas import merge_reports
+```
 
 ## Development
 
