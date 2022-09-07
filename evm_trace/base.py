@@ -34,12 +34,11 @@ class CallTreeNode(BaseModel):
     failed: bool = False
     display_cls: Type[DisplayableCallTreeNode] = DisplayableCallTreeNode
 
-    @property
-    def display_nodes(self) -> Iterator[DisplayableCallTreeNode]:
+    def get_display_nodes(self) -> Iterator[DisplayableCallTreeNode]:
         return self.display_cls.make_tree(self)
 
     def __str__(self) -> str:
-        return "\n".join([str(t) for t in self.display_nodes])
+        return "\n".join([str(t) for t in self.get_display_nodes()])
 
     def __repr__(self) -> str:
         return str(self)
