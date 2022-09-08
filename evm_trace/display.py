@@ -6,16 +6,20 @@ if TYPE_CHECKING:
     from evm_trace.base import CallTreeNode
 
 
-class DisplayableCallTreeNode(object):
-    _FILE_MIDDLE_PREFIX = "├──"
-    _FILE_LAST_PREFIX = "└──"
-    _PARENT_PREFIX_MIDDLE = "    "
-    _PARENT_PREFIX_LAST = "│   "
+def get_tree_display(call: "CallTreeNode") -> str:
+    return "\n".join([str(t) for t in TreeRepresentation.make_tree(call)])
+
+
+class TreeRepresentation(object):
+    FILE_MIDDLE_PREFIX = "├──"
+    FILE_LAST_PREFIX = "└──"
+    PARENT_PREFIX_MIDDLE = "    "
+    PARENT_PREFIX_LAST = "│   "
 
     def __init__(
         self,
         call: "CallTreeNode",
-        parent: Optional["DisplayableCallTreeNode"] = None,
+        parent: Optional["TreeRepresentation"] = None,
         is_last: bool = False,
     ):
         self.call = call
@@ -57,9 +61,9 @@ class DisplayableCallTreeNode(object):
     def make_tree(
         cls,
         root: "CallTreeNode",
-        parent: Optional["DisplayableCallTreeNode"] = None,
+        parent: Optional["TreeRepresentation"] = None,
         is_last: bool = False,
-    ) -> Iterator["DisplayableCallTreeNode"]:
+    ) -> Iterator["TreeRepresentation"]:
         displayable_root = cls(root, parent=parent, is_last=is_last)
         yield displayable_root
 
@@ -77,12 +81,12 @@ class DisplayableCallTreeNode(object):
         if self.parent is None:
             return self.title
 
-        _filename_prefix = self._FILE_LAST_PREFIX if self.is_last else self._FILE_MIDDLE_PREFIX
+        filename_prefix = self.FILE_LAST_PREFIX if self.is_last else self.FILE_MIDDLE_PREFIX
 
-        parts = [f"{_filename_prefix} {self.title}"]
+        parts = [f"{filename_prefix} {self.title}"]
         parent = self.parent
         while parent and parent.parent is not None:
-            parts.append(self._PARENT_PREFIX_MIDDLE if parent.is_last else self._PARENT_PREFIX_LAST)
+            parts.append(self.PARENT_PREFIX_MIDDLE if parent.is_last else self.PARENT_PREFIX_LAST)
             parent = parent.parent
 
         return "".join(reversed(parts))

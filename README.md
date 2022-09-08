@@ -4,7 +4,7 @@ Ethereum Virtual Machine transaction tracing tool
 
 ## Dependencies
 
-* [python3](https://www.python.org/downloads) version 3.7.2 or greater, python3-dev
+* [python3](https://www.python.org/downloads) version 3.8 or greater, python3-dev
 
 ## Installation
 
@@ -77,25 +77,6 @@ And to make call-tree nodes, you can do:
 from evm_trace import get_calltree_from_parity_trace
 
 tree = get_calltree_from_parity_trace(trace_list)
-```
-
-### Call Tree Node Customization
-
-You can also customize the output by making your own display class:
-
-```python
-from evm_trace.display import DisplayableCallTreeNode, get_calltree_from_trace
-
-
-class CustomDisplay(DisplayableCallTreeNode):
-    def title(self) -> str:
-        call_type = self.call.call_type.value.lower().capitalize()
-        address = self.call.address.hex()
-        cost = self.call.gas_cost
-        return f"{call_type} call @ {address} gas_cost={cost}"
-
-
-calltree = get_calltree_from_geth_trace(trace, display_cls=CustomDisplay)
 ```
 
 ### Gas Reports

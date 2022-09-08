@@ -1,9 +1,8 @@
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, validator
 
 from evm_trace.base import CallTreeNode, CallType
-from evm_trace.display import DisplayableCallTreeNode
 
 
 class CallAction(BaseModel):
@@ -95,7 +94,6 @@ class ParityTraceList(BaseModel):
 def get_calltree_from_parity_trace(
     traces: ParityTraceList,
     root: Optional[ParityTrace] = None,
-    display_cls: Type[DisplayableCallTreeNode] = DisplayableCallTreeNode,
     **root_kwargs,
 ) -> CallTreeNode:
     """
@@ -120,7 +118,6 @@ def get_calltree_from_parity_trace(
     node_kwargs: Dict[Any, Any] = dict(
         call_type=root.call_type,
         failed=failed,
-        display_cls=display_cls,
         **root_kwargs,
     )
 
