@@ -5,7 +5,7 @@ from eth_utils import to_int
 from ethpm_types import BaseModel, HexBytes
 from pydantic import Field
 
-from evm_trace._display import get_tree_display
+from evm_trace.display import get_tree_display
 from evm_trace.enums import CallType
 
 

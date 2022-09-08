@@ -79,25 +79,6 @@ from evm_trace import get_calltree_from_parity_trace
 tree = get_calltree_from_parity_trace(trace_list)
 ```
 
-### Call Tree Node Customization
-
-You can also customize the output by making your own display class:
-
-```python
-from evm_trace._display import TreeRepresentation, get_calltree_from_trace
-
-
-class CustomDisplay(TreeRepresentation):
-    def title(self) -> str:
-        call_type = self.call.call_type.value.lower().capitalize()
-        address = self.call.address.hex()
-        cost = self.call.gas_cost
-        return f"{call_type} call @ {address} gas_cost={cost}"
-
-
-calltree = get_calltree_from_geth_trace(trace, display_cls=CustomDisplay)
-```
-
 ### Gas Reports
 
 If you are using a node that supports creating traces, you can get a gas report.
