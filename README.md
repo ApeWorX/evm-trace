@@ -84,10 +84,10 @@ tree = get_calltree_from_parity_trace(trace_list)
 You can also customize the output by making your own display class:
 
 ```python
-from evm_trace.display import DisplayableCallTreeNode, get_calltree_from_trace
+from evm_trace._display import TreeRepresentation, get_calltree_from_trace
 
 
-class CustomDisplay(DisplayableCallTreeNode):
+class CustomDisplay(TreeRepresentation):
     def title(self) -> str:
         call_type = self.call.call_type.value.lower().capitalize()
         address = self.call.address.hex()

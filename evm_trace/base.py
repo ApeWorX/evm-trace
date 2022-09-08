@@ -1,11 +1,11 @@
 import math
-from typing import Dict, Iterator, List, Optional, Type
+from typing import Dict, Iterator, List, Optional
 
 from eth_utils import to_int
 from ethpm_types import BaseModel, HexBytes
 from pydantic import Field
 
-from evm_trace.display import DisplayableCallTreeNode
+from evm_trace._display import get_tree_display
 from evm_trace.enums import CallType
 
 
@@ -32,13 +32,9 @@ class CallTreeNode(BaseModel):
     calls: List["CallTreeNode"] = []
     selfdestruct: bool = False
     failed: bool = False
-    display_cls: Type[DisplayableCallTreeNode] = DisplayableCallTreeNode
-
-    def get_display_nodes(self) -> Iterator[DisplayableCallTreeNode]:
-        return self.display_cls.make_tree(self)
 
     def __str__(self) -> str:
-        return "\n".join([str(t) for t in self.get_display_nodes()])
+        return get_tree_display(self)
 
     def __repr__(self) -> str:
         return str(self)
