@@ -6,12 +6,8 @@ from eth.vm.memory import Memory  # type: ignore
 from eth.vm.stack import Stack  # type: ignore
 from eth_utils import to_checksum_address
 from hexbytes import HexBytes
-
-try:
-    from msgspec import Struct  # type: ignore
-    from msgspec.json import Decoder  # type: ignore
-except ImportError as e:
-    raise ImportError("msgspec not found. install it with `pip install msgspec`") from e
+from msgspec import Struct  # type: ignore
+from msgspec.json import Decoder  # type: ignore
 
 # opcodes grouped by the number of items they pop from the stack
 # fmt: off

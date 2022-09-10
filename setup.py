@@ -59,6 +59,7 @@ setup(
         "hexbytes>=0.3.0,<1.0.0",
         "eth-utils>=2.0.0",
         "ethpm-types>=0.3.7,<0.4.0",
+        "msgspec>=0.8.0",
     ],
     python_requires=">=3.8,<4",
     extras_require=extras_require,
