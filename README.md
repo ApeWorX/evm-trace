@@ -1,4 +1,4 @@
-# evm-trace
+# Quick Start
 
 Ethereum Virtual Machine transaction tracing tool
 
