@@ -55,10 +55,10 @@ setup(
     include_package_data=True,
     install_requires=[
         "pydantic>=1.10.1,<2",
-        "hexbytes>=0.3.0,<1",
+        "hexbytes>=0.2.3,<1",
         "eth-utils>=2",
         "ethpm-types>=0.3.7,<0.4",
-        "msgspec>=0.8.0",
+        "msgspec>=0.8",
     ],
     python_requires=">=3.8,<4",
     extras_require=extras_require,
