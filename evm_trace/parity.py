@@ -105,8 +105,6 @@ def get_calltree_from_parity_trace(
           likely loaded from the response data from the ``trace_transaction`` RPC response.
         root (:class:`~evm_trace.parity.ParityTrace`): The root parity trace node. Optional, uses
           the first item by default.
-        display_cls (Type[DisplayableCallTreeNode]]: A custom class to use for representing
-          the call tree. Defaults to :class:`~evm_trace.display.DisplayableCallTreeNode`.
         **root_kwargs: Additional kwargs to append to the root node. Useful for adding gas for
           reverted calls.
 
