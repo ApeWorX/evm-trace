@@ -20,7 +20,7 @@ reports: List[GasReport] = [
     },
     {
         CONTRACT_A: {METHOD_A: [105, 106]},
-        CONTRACT_B: {METHOD_B: [200, 201]},
+        CONTRACT_B: {METHOD_A: [200, 201]},
         CONTRACT_C: {METHOD_C: [300]},
     },
 ]
@@ -38,6 +38,6 @@ def test_merged_reports():
     merged = merge_reports(*reports)
     assert merged == {
         CONTRACT_A: {METHOD_A: [100, 101, 100, 102, 105, 106]},
-        CONTRACT_B: {METHOD_B: [200, 202, 202, 200, 200, 200, 201]},
+        CONTRACT_B: {METHOD_A: [200, 201], METHOD_B: [200, 202, 202, 200, 200]},
         CONTRACT_C: {METHOD_C: [300]},
     }
