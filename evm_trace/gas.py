@@ -14,7 +14,7 @@ def get_gas_report(calltree: CallTreeNode) -> GasReport:
         calltree (:class:`~evm_trace.base.CallTreeNode`): call tree used for gas report.
 
     Returns:
-        :class:`~evm_trace.gas.Report`: Gas report structure from a call tree.
+        :class:`~evm_trace.gas.GasReport`: Gas report structure from a call tree.
     """
     report = {
         calltree.address: {calltree.calldata[:4]: [calltree.gas_cost] if calltree.gas_cost else []}
