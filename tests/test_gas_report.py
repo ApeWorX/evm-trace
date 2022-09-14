@@ -26,12 +26,16 @@ reports: List[GasReport] = [
 ]
 
 
-def test_builds_gas_report(call_tree_data):
+def test_get_gas_report(call_tree_data):
     tree = CallTreeNode(**call_tree_data)
     gas_report = get_gas_report(tree)
 
-    for call in tree.calls:
-        assert call.address in gas_report
+    def assert_all(t):
+        assert t.address in gas_report
+        for c in t.calls:
+            assert_all(c)
+
+    assert_all(tree)
 
 
 def test_merged_reports():

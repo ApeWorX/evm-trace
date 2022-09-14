@@ -187,6 +187,7 @@ DELEGATE_CALL_TREE_DATA = {
     "selfdestruct": False,
     "failed": False,
 }
+
 CALL_TREE_DATA_MAP = {
     CallType.CALL.value: MUTABLE_CALL_TREE_DATA,
     CallType.STATICCALL.value: STATIC_CALL_TREE_DATA,
