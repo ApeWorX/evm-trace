@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterator, List, Optional, Type, Union
 
-from eth.vm.memory import Memory  # type: ignore
-from eth.vm.stack import Stack  # type: ignore
+from eth.vm.memory import Memory
+from eth.vm.stack import Stack
 from eth_utils import to_checksum_address
 from hexbytes import HexBytes
-from msgspec import Struct  # type: ignore
-from msgspec.json import Decoder  # type: ignore
+from msgspec import Struct
+from msgspec.json import Decoder
 
 # opcodes grouped by the number of items they pop from the stack
 # fmt: off
