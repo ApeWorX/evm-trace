@@ -9,6 +9,11 @@ def test_trace_frame_validation_passes(trace_frame_data):
     assert frame
 
 
+def test_trace_no_memory():
+    raw_frame = {"pc": 0, "op": "PUSH1", "gas": 4732305, "gasCost": 3, "depth": 1, "stack": []}
+    assert TraceFrame(**raw_frame)
+
+
 @pytest.mark.parametrize(
     "test_data",
     (
