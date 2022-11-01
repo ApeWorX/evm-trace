@@ -6,32 +6,42 @@ from evm_trace import CallTreeNode
 from evm_trace.gas import GasReport, get_gas_report, merge_reports
 
 # Simplified version of gas reports only for testing purposes
+CONTRACT_A = HexBytes("0x0000000000000000000000000000000000000001")
+CONTRACT_B = HexBytes("0x0000000000000000000000000000000000000002")
+CONTRACT_C = HexBytes("0x0000000000000000000000000000000000000003")
+METHOD_A = HexBytes("0x181d60da")
+METHOD_B = HexBytes("0xc7cee1b7")
+METHOD_C = HexBytes("0xd76d0659")
+
 reports: List[GasReport] = [
     {
-        HexBytes("1"): {HexBytes("10"): [1]},
-        HexBytes("2"): {HexBytes("20"): [2]},
+        CONTRACT_A: {METHOD_A: [100, 101, 100, 102]},
+        CONTRACT_B: {METHOD_B: [200, 202, 202, 200, 200]},
     },
     {
-        HexBytes("1"): {HexBytes("10"): [1]},
-        HexBytes("2"): {HexBytes("21"): [2]},
-        HexBytes("3"): {HexBytes("30"): [3]},
+        CONTRACT_A: {METHOD_A: [105, 106]},
+        CONTRACT_B: {METHOD_A: [200, 201]},
+        CONTRACT_C: {METHOD_C: [300]},
     },
 ]
 
 
-def test_builds_gas_report(call_tree_data):
+def test_get_gas_report(call_tree_data):
     tree = CallTreeNode(**call_tree_data)
     gas_report = get_gas_report(tree)
 
-    for call in tree.calls:
-        assert call.address in gas_report
+    def assert_all(t):
+        assert t.address in gas_report
+        for c in t.calls:
+            assert_all(c)
+
+    assert_all(tree)
 
 
 def test_merged_reports():
     merged = merge_reports(*reports)
-
     assert merged == {
-        HexBytes("0x01"): {HexBytes("0x10"): [1, 1]},
-        HexBytes("0x02"): {HexBytes("0x20"): [2], HexBytes("0x21"): [2]},
-        HexBytes("0x03"): {HexBytes("0x30"): [3]},
+        CONTRACT_A: {METHOD_A: [100, 101, 100, 102, 105, 106]},
+        CONTRACT_B: {METHOD_A: [200, 201], METHOD_B: [200, 202, 202, 200, 200]},
+        CONTRACT_C: {METHOD_C: [300]},
     }
