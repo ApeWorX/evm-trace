@@ -25,8 +25,8 @@ class CallTreeNode(BaseModel):
     address: HexBytes = HexBytes("")
     value: int = 0
     depth: int = 0
-    gas_limit: Optional[int]
-    gas_cost: Optional[int]  # calculated from call starting and return
+    gas_limit: Optional[int] = None
+    gas_cost: Optional[int] = None  # calculated from call starting and return
     calldata: HexBytes = HexBytes("")
     returndata: HexBytes = HexBytes("")
     calls: List["CallTreeNode"] = []
