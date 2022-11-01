@@ -15,7 +15,7 @@ class TraceFrame(BaseModel):
     gas: int
     gas_cost: int = Field(alias="gasCost")
     depth: int
-    stack: List[HexBytes]
+    stack: List[HexBytes] = []
     memory: List[HexBytes] = []
     storage: Dict[HexBytes, HexBytes] = {}
 
