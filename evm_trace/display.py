@@ -37,10 +37,12 @@ class TreeRepresentation(object):
 
         try:
             address = to_checksum_address(address_hex_str) if address_hex_str else None
-        except (ImportError, ValueError):
+        except ImportError:
             # Ignore checksumming if user does not have eth-hash backend installed.
-            # a contract may attempt to call into an address that can't be normalized
             address = address_hex_str  # type: ignore
+        except ValueError:
+            # a contract may attempt to call into an address that can't be normalized
+            address = address_hex_str
 
         cost = self.call.gas_cost
         call_path = str(address) if address else ""
