@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 from pydantic import BaseModel, Field, validator
 
@@ -101,7 +101,7 @@ def get_calltree_from_parity_trace(
     (e.g. from the ``trace_transaction`` RPC).
 
     Args:
-        traces (List[:class:~evm_trace.parity.ParityTraceList]): The list of parity trace nodes,
+        traces (:class:~evm_trace.parity.ParityTraceList): The list of parity trace nodes,
           likely loaded from the response data from the ``trace_transaction`` RPC response.
         root (:class:`~evm_trace.parity.ParityTrace`): The root parity trace node. Optional, uses
           the first item by default.
@@ -120,8 +120,10 @@ def get_calltree_from_parity_trace(
     )
 
     if root.call_type == CallType.CREATE:
-        create_action: CreateAction = root.action  # type: ignore
-        create_result: CreateResult = root.result  # type: ignore
+        create_action: CreateAction = cast(CreateAction, root.action)
+        create_result: Optional[CreateResult] = (
+            cast(CreateResult, root.result) if root.result is not None else None
+        )
 
         node_kwargs.update(
             value=create_action.value,
@@ -136,8 +138,10 @@ def get_calltree_from_parity_trace(
         CallType.STATICCALL,
         CallType.CALLCODE,
     ):
-        call_action: CallAction = root.action  # type: ignore
-        call_result: CallResult = root.result  # type: ignore
+        call_action: CallAction = cast(CallAction, root.action)
+        call_result: Optional[CallResult] = (
+            cast(CallResult, root.result) if root.result is not None else None
+        )
 
         node_kwargs.update(
             address=call_action.receiver,
@@ -153,14 +157,15 @@ def get_calltree_from_parity_trace(
             )
 
     elif root.call_type == CallType.SELFDESTRUCT:
-        selfdestruct_action: SelfDestructAction = root.action  # type: ignore
+        selfdestruct_action: SelfDestructAction = cast(SelfDestructAction, root.action)
         node_kwargs.update(
             address=selfdestruct_action.address,
         )
 
-    subtraces = [
+    trace_list: List[ParityTrace] = [x for x in traces]
+    subtraces: List[ParityTrace] = [
         sub
-        for sub in traces
+        for sub in trace_list
         if len(sub.trace_address) == len(root.trace_address) + 1
         and sub.trace_address[:-1] == root.trace_address
     ]
