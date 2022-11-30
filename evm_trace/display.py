@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Iterator, Optional, cast
 
-from ape.types import AddressType
+from eth_typing import ChecksumAddress
 from eth_utils import to_checksum_address
 
 if TYPE_CHECKING:
@@ -40,7 +40,7 @@ class TreeRepresentation:
             address = to_checksum_address(address_hex_str) if address_hex_str else None
         except (ImportError, ValueError):
             # Ignore checksumming if user does not have eth-hash backend installed.
-            address = cast(AddressType, address_hex_str)
+            address = cast(ChecksumAddress, address_hex_str)
 
         cost = self.call.gas_cost
         call_path = str(address) if address else ""

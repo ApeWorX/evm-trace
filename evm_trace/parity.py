@@ -113,11 +113,10 @@ def get_calltree_from_parity_trace(
     """
     root = root or traces[0]
     failed = root.error is not None
-    node_kwargs: Dict[Any, Any] = dict(
-        call_type=root.call_type,
-        failed=failed,
-        **root_kwargs,
-    )
+    node_kwargs: Dict[Any, Any] = {
+        "call_type": root.call_type,
+        "failed": failed,
+    }
 
     if root.call_type == CallType.CREATE:
         create_action: CreateAction = cast(CreateAction, root.action)
@@ -170,5 +169,6 @@ def get_calltree_from_parity_trace(
         and sub.trace_address[:-1] == root.trace_address
     ]
     node_kwargs["calls"] = [get_calltree_from_parity_trace(traces, root=sub) for sub in subtraces]
+    node_kwargs = {**node_kwargs, **root_kwargs}
     node = CallTreeNode.parse_obj(node_kwargs)
     return node
