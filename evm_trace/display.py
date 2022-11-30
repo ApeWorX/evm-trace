@@ -1,5 +1,6 @@
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Iterator, Optional, cast
 
+from eth_typing import ChecksumAddress
 from eth_utils import to_checksum_address
 
 if TYPE_CHECKING:
@@ -10,7 +11,7 @@ def get_tree_display(call: "CallTreeNode") -> str:
     return "\n".join([str(t) for t in TreeRepresentation.make_tree(call)])
 
 
-class TreeRepresentation(object):
+class TreeRepresentation:
     FILE_MIDDLE_PREFIX = "├──"
     FILE_LAST_PREFIX = "└──"
     PARENT_PREFIX_MIDDLE = "    "
@@ -37,9 +38,9 @@ class TreeRepresentation(object):
 
         try:
             address = to_checksum_address(address_hex_str) if address_hex_str else None
-        except ImportError:
+        except (ImportError, ValueError):
             # Ignore checksumming if user does not have eth-hash backend installed.
-            address = address_hex_str  # type: ignore
+            address = cast(ChecksumAddress, address_hex_str)
 
         cost = self.call.gas_cost
         call_path = str(address) if address else ""
