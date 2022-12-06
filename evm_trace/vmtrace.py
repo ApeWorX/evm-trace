@@ -79,7 +79,7 @@ class StorageDiff(Struct):
 
 class VMTraceFrame(Struct):
     """
-    A synthetic trace frame represening the state at a step of execution.
+    A synthetic trace frame representing the state at a step of execution.
     """
 
     address: str
@@ -106,24 +106,21 @@ def to_trace_frames(
     Replays a VMTrace and yields trace frames at each step of the execution.
     Can be used as a much faster drop-in replacement for Geth-style traces.
 
-    Arguments:
-        trace (VMTrace):
-            a decoded trace from a `trace_` rpc.
-        depth (int):
-            a depth of the call being processed. automatically populated.
-        address (str):
-            the address of the contract being executed. auto populated except the root call.
-        copy_memory (bool):
-            whether to copy memory when returning trace frames. disable for a speedup when dealing
-            with traces using a large amount of memory. when disabled, `VMTraceFrame.memory` becomes
-            `memoryview` instead of `bytes`, which works like a pointer at the memory `bytearray`.
-            this means you must process the frames immediately, otherwise you risk memory value
-            mutating further into execution.
+    Args:
+        trace (VMTrace): A decoded trace from a `trace_` rpc.
+        depth (int): A depth of the call being processed. automatically populated.
+        address (str): The address of the contract being executed. auto populated
+            except the root call.
+        copy_memory (bool): Whether to copy memory when returning trace frames.
+            Disable for a speedup when dealing with traces using a large amount of memory.
+            when disabled, `VMTraceFrame.memory` becomes `memoryview` instead of `bytes`, which
+            works like a pointer at the memory `bytearray`. this means you must process the
+            frames immediately, otherwise you risk memory value mutating further into execution.
 
     Returns:
-        Iterator[VMTraceFrame]:
-            an iterator of synthetic traces which can be used as a drop-in replacement for
-            Geth-style traces. also contains the address of the current contract context.
+        Iterator[VMTraceFrame]: An iterator of synthetic traces which can be used as a drop-in
+        replacement for Geth-style traces. also contains the address of the current contract
+        context.
     """
     memory = Memory()
     stack = Stack()
@@ -182,7 +179,7 @@ class RPCTraceResult(Struct):
 def dec_hook(type: Type, obj: Any) -> Any:
     if type is uint256:
         return uint256(obj, 16)
-    if type is HexBytes:
+    elif type is HexBytes:
         return HexBytes(obj)
 
 
@@ -194,5 +191,5 @@ def from_rpc_response(buffer: bytes) -> Union[VMTrace, List[VMTrace]]:
 
     if isinstance(resp.result, list):
         return [i.vmTrace for i in resp.result]
-    else:
-        return resp.result.vmTrace
+
+    return resp.result.vmTrace

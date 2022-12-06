@@ -3,7 +3,7 @@ from typing import Dict, Iterator, List, Optional
 
 from eth_utils import to_int
 from ethpm_types import BaseModel, HexBytes
-from pydantic import Field
+from pydantic import Field, validator
 
 from evm_trace.display import get_tree_display
 from evm_trace.enums import CallType
@@ -18,6 +18,10 @@ class TraceFrame(BaseModel):
     stack: List[HexBytes] = []
     memory: List[HexBytes] = []
     storage: Dict[HexBytes, HexBytes] = {}
+
+    @validator("pc", "gas", "gas_cost", "depth", pre=True)
+    def validate_ints(cls, value):
+        return int(value, 16) if isinstance(value, str) else value
 
 
 class CallTreeNode(BaseModel):
@@ -51,19 +55,19 @@ def get_calltree_from_geth_trace(
 
     Args:
         trace (Iterator[TraceFrame]): Iterator of transaction trace frames.
-        show_internal (bool): Boolean whether to display internal calls. Defaulted to False.
+        show_internal (bool): Boolean whether to display internal calls.
+          Defaults to ``False``.
         root_node_kwargs (dict): Keyword arguments passed to the root ``CallTreeNode``.
 
     Returns:
         :class:`~evm_trace.base.CallTreeNode`: Call tree of transaction trace.
     """
 
-    node = _create_node_from_call(
+    return _create_node_from_call(
         trace=trace,
         show_internal=show_internal,
         **root_node_kwargs,
     )
-    return node
 
 
 def _extract_memory(offset: HexBytes, size: HexBytes, memory: List[HexBytes]) -> HexBytes:
@@ -82,7 +86,7 @@ def _extract_memory(offset: HexBytes, size: HexBytes, memory: List[HexBytes]) ->
     size_int = to_int(size)
 
     if size_int == 0:
-        return HexBytes(b"")
+        return HexBytes("")
 
     offset_int = to_int(offset)
 
