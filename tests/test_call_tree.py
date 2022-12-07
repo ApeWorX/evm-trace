@@ -1,7 +1,7 @@
 import pytest
 
-from evm_trace import CallTreeNode
-from evm_trace.base import CallType
+from evm_trace.base import CallTreeNode
+from evm_trace.enums import CallType
 
 from .expected_traces import (
     CALL_TRACE_EXPECTED_OUTPUT,

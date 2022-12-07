@@ -2,11 +2,16 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 from pydantic import BaseModel, Field, validator
 
-from evm_trace.base import CallTreeNode, CallType
+from evm_trace.base import CallTreeNode
+from evm_trace.enums import CallType
 
 
 class CallAction(BaseModel):
     gas: int
+    """
+    The amount of gas available for the action.
+    """
+
     input: Optional[str] = None
     receiver: Optional[str] = Field(alias="to", default=None)
     sender: str = Field(alias="from")
@@ -21,6 +26,10 @@ class CallAction(BaseModel):
 
 class CreateAction(BaseModel):
     gas: int
+    """
+    The amount of gas available for the action.
+    """
+
     init: str
     value: int
 
@@ -35,22 +44,40 @@ class SelfDestructAction(BaseModel):
 
     @validator("balance", pre=True)
     def convert_integer(cls, v):
-        return int(v, 16)
+        return int(v, 16) if isinstance(v, str) else int(v)
 
 
 class ActionResult(BaseModel):
-    gas_used: str = Field(alias="gasUsed")
+    """
+    A base class for various OP-code-specified actions
+    in Parity ``trace_transaction`` output.
+    """
+
+    gas_used: int = Field(alias="gasUsed")
+    """
+    The amount of gas utilized by the action. It does *not*
+    include the ``21,000`` base fee or the data costs of ``4``
+    for gas per zero byte and ``16`` gas per non-zero byte.
+    """
 
     @validator("gas_used", pre=True)
     def convert_integer(cls, v):
-        return int(v, 16)
+        return int(v, 16) if isinstance(v, str) else int(v)
 
 
 class CallResult(ActionResult):
+    """
+    The result of CALL.
+    """
+
     output: str
 
 
 class CreateResult(ActionResult):
+    """
+    The result of CREATE.
+    """
+
     address: str
     code: str
 
@@ -161,7 +188,7 @@ def get_calltree_from_parity_trace(
             address=selfdestruct_action.address,
         )
 
-    trace_list: List[ParityTrace] = [x for x in traces]
+    trace_list: List[ParityTrace] = list(traces)
     subtraces: List[ParityTrace] = [
         sub
         for sub in trace_list

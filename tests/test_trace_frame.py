@@ -3,7 +3,7 @@ from hexbytes import HexBytes
 from pydantic import ValidationError
 
 from evm_trace import CallType
-from evm_trace.base import TraceFrame, get_calltree_from_geth_trace
+from evm_trace.geth import TraceFrame, get_calltree_from_geth_trace
 
 
 def test_trace_frame_validation_passes(trace_frame_data):

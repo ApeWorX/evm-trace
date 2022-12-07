@@ -1,7 +1,7 @@
 import pytest
 from hexbytes import HexBytes
 
-from evm_trace.base import CallType
+from evm_trace.enums import CallType
 
 TRACE_FRAME_DATA = {
     "pc": 1564,

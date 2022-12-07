@@ -1,4 +1,6 @@
-from .base import CallTreeNode, CallType, TraceFrame, get_calltree_from_geth_trace
+from .base import CallTreeNode
+from .enums import CallType
+from .geth import TraceFrame, get_calltree_from_geth_trace
 from .parity import ParityTrace, ParityTraceList, get_calltree_from_parity_trace
 
 __all__ = [
