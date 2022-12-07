@@ -163,10 +163,6 @@ def _create_node_from_call(
                 offset=frame.stack[-1], size=frame.stack[-2], memory=frame.memory
             )
 
-            # print(f"(pop) Gas limit: {frame.gas}")
-            # node.gas_limit -= frame.gas
-            # node.gas_cost += node.gas_limit
-
             # TODO: Handle "execution halted" vs. gas limit reached
             node.failed = frame.op == "REVERT"
             break
