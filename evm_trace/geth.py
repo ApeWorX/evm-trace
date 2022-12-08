@@ -46,8 +46,19 @@ class TraceFrame(BaseModel):
         return int(value, 16) if isinstance(value, str) else value
 
 
-def get_calltree_from_geth_call_trace(**kwargs) -> CallTreeNode:
-    data = _validate_data_from_call_tracer(kwargs)
+def get_calltree_from_geth_call_trace(data: Dict) -> CallTreeNode:
+    """
+    Creates a CallTreeNode from a given transaction call trace.
+
+    Args:
+        data (Dict): The response from ``debug_traceTransaction`` when using
+          ``tracer=callTracer``.
+
+    Returns:
+        :class:`~evm_trace.base.CallTreeNode`: Call tree of transaction trace.
+    """
+
+    data = _validate_data_from_call_tracer(data)
     root = CallTreeNode(**data)
 
     def fix_depth(r: CallTreeNode):
