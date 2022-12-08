@@ -144,9 +144,8 @@ def _create_node_from_call(
     for frame in trace:
         if frame.op in ("CALL", "DELEGATECALL", "STATICCALL"):
 
-            # NOTE: Because of the differences in how Geth-style traces set gas values
-            # versus Parity, and because we are unable to get accurate gas-used per node,
-            # gas calculations are disabled for Geth style calls.
+            # NOTE: Because of the different meanings in structLog style gas values,
+            # gas is not set for nodes created this way.
             child_node_kwargs = {"address": frame.stack[-2][-20:], "depth": frame.depth}
 
             if frame.op == "CALL":
