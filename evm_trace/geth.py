@@ -46,6 +46,19 @@ class TraceFrame(BaseModel):
         return int(value, 16) if isinstance(value, str) else value
 
 
+def get_calltree_from_geth_call_trace(**kwargs) -> CallTreeNode:
+    data = _validate_data_from_call_tracer(kwargs)
+    root = CallTreeNode(**data)
+
+    def fix_depth(r: CallTreeNode):
+        for c in r.calls:
+            c.depth = r.depth + 1
+            fix_depth(c)
+
+    fix_depth(root)
+    return root
+
+
 def get_calltree_from_geth_trace(
     trace: Iterator[TraceFrame], show_internal: bool = False, **root_node_kwargs
 ) -> CallTreeNode:
@@ -173,3 +186,36 @@ def _create_node_from_call(
     # TODO: Handle "execution halted" vs. gas limit reached
 
     return node
+
+
+def _validate_data_from_call_tracer(data: Dict) -> Dict:
+    # Handle renames
+    if "receiver" in data:
+        data["address"] = data.pop("receiver")
+    elif "to" in data:
+        data["address"] = data.pop("to")
+    if "input" in data:
+        data["calldata"] = data.pop("input")
+    if "output" in data:
+        data["returndata"] = data.pop("output")
+    if "gasUsed" in data:
+        data["gas_cost"] = data.pop("gasUsed")
+    if "gas" in data:
+        data["gas_limit"] = data.pop("gas")
+    if "type" in data:
+        data["call_type"] = data.pop("type")
+
+    # Remove unneeded keys
+    unneeded_keys = ("sender", "from")
+    for key in unneeded_keys:
+        if key in data:
+            del data[key]
+
+    # Handle sub calls
+    def fix_call_calls(r):
+        r["calls"] = [
+            _validate_data_from_call_tracer(x) for x in r.get("calls", []) if isinstance(x, dict)
+        ]
+
+    fix_call_calls(data)
+    return data

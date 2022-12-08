@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from ethpm_types import BaseModel, HexBytes
+from pydantic import validator
 
 from evm_trace.display import get_tree_display
 from evm_trace.enums import CallType
@@ -51,10 +52,28 @@ class CallTreeNode(BaseModel):
     """Whether the call failed or not."""
 
     def __str__(self) -> str:
-        return get_tree_display(self)
+        try:
+            return get_tree_display(self)
+        except Exception as err:
+            return f"CallTreeNode (display_err={err})"
 
     def __repr__(self) -> str:
         return str(self)
 
     def __getitem__(self, index: int) -> "CallTreeNode":
         return self.calls[index]
+
+    @validator("calldata", "returndata", "address", pre=True)
+    def validate_bytes(cls, value):
+        return HexBytes(value) if isinstance(value, str) else value
+
+    @validator("value", "depth", pre=True)
+    def validate_ints(cls, value):
+        if not value:
+            return 0
+
+        return int(value, 16) if isinstance(value, str) else value
+
+    @validator("gas_limit", "gas_cost", pre=True)
+    def validate_optional_ints(cls, value):
+        return int(value, 16) if isinstance(value, str) else value

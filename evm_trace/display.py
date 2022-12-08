@@ -69,6 +69,7 @@ class TreeRepresentation:
         yield displayable_root
 
         count = 1
+
         for child_node in root.calls:
             is_last = count == len(root.calls)
             if child_node.calls:
