@@ -1,6 +1,5 @@
-from typing import TYPE_CHECKING, Iterator, Optional, cast
+from typing import TYPE_CHECKING, Iterator, Optional
 
-from eth_typing import ChecksumAddress
 from eth_utils import to_checksum_address
 
 if TYPE_CHECKING:
