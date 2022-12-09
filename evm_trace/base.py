@@ -18,7 +18,7 @@ class CallTreeNode(BaseModel):
     """The type of call."""
 
     address: HexBytes = HexBytes("")
-    """The contract address the call was made too."""
+    """The contract address of the call."""
 
     value: int = 0
     """The amount of value sent on the call."""
