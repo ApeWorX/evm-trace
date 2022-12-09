@@ -10,8 +10,7 @@ from evm_trace.enums import CallType
 class CallTreeNode(BaseModel):
     """
     A higher-level object modeling a node in an execution call tree.
-    Both Geth-style and Parity-style low-level data structures are
-    able to convert to this one.
+    Used by both Geth-style and Parity-style low-level data structures.
     """
 
     call_type: CallType
