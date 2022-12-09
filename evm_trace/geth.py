@@ -185,7 +185,6 @@ def _create_node_from_call(
             node.returndata = _extract_memory(
                 offset=frame.stack[-1], size=frame.stack[-2], memory=frame.memory
             )
-
             # TODO: Handle "execution halted" vs. gas limit reached
             node.failed = frame.op == "REVERT"
             break
