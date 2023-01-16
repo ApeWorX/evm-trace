@@ -27,7 +27,7 @@ def get_gas_report(calltree: CallTreeNode) -> GasReport:
 def merge_reports(*reports: GasReport) -> GasReport:
     """
     Merge method for merging a list of gas reports and combining a list of gas costs.
-    If given a single report, it does nothing and returns in.
+    If given a single report, it only returns it.
     """
     reports_ls = list(reports)
     if len(reports_ls) == 1:
