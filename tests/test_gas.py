@@ -38,10 +38,16 @@ def test_get_gas_report(call_tree_data):
     assert_all(tree)
 
 
-def test_merged_reports():
+def test_merge_reports():
     merged = merge_reports(*reports)
     assert merged == {
         CONTRACT_A: {METHOD_A: [100, 101, 100, 102, 105, 106]},
         CONTRACT_B: {METHOD_A: [200, 201], METHOD_B: [200, 202, 202, 200, 200]},
         CONTRACT_C: {METHOD_C: [300]},
     }
+
+
+def test_merge_single_report():
+    actual = merge_reports(reports[0])
+    expected = reports[0]
+    assert actual == expected
