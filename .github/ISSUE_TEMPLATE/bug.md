@@ -1,16 +1,17 @@
 ---
 name: Bug report
 about: Report an error that you've encountered.
-labels: 'bug'
+labels: bug
 ---
+
 ### Environment information
 
-* Python Version: x.x.x
-* OS: macOS/linux/win
+- Python Version: x.x.x
+- OS: macOS/linux/win
 
 If using with `ape`, please provide:
 
-* `ape` and plugin versions:
+- `ape` and plugin versions:
 
 ```
 $ ape --version
@@ -24,9 +25,9 @@ $ ape plugins list
 
 Please include information like:
 
-* what command you ran
-* the code that caused the failure (see [this link](https://help.github.com/articles/basic-writing-and-formatting-syntax/) for help with formatting code)
-* full output of the error you received
+- what command you ran
+- the code that caused the failure (see [this link](https://help.github.com/articles/basic-writing-and-formatting-syntax/) for help with formatting code)
+- full output of the error you received
 
 ### How can it be fixed?
 

@@ -1,15 +1,15 @@
 ---
 name: Feature request
 about: Request a new feature, or an improvement to existing functionality.
-labels: 'enhancement'
+labels: enhancement
 ---
 
 ### Overview
 
 Provide a simple overview of what you wish to see added. Please include:
 
-* What you are trying to do
-* Why Ape's current functionality is inadequate to address your goal
+- What you are trying to do
+- Why Ape's current functionality is inadequate to address your goal
 
 ### Specification
 

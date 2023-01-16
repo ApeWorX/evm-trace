@@ -27,18 +27,13 @@ def get_gas_report(calltree: CallTreeNode) -> GasReport:
 def merge_reports(*reports: GasReport) -> GasReport:
     """
     Merge method for merging a list of gas reports and combining a list of gas costs.
+    If given a single report, it only returns it.
     """
     reports_ls = list(reports)
-    if len(reports_ls) < 1:
-        raise ValueError("Must be 2 or more reports to merge")
-    elif len(reports_ls) == 1:
+    if len(reports_ls) == 1:
         return reports_ls[0]
 
     merged_report: GasReport = copy.deepcopy(reports_ls.pop(0))
-
-    if len(reports_ls) < 1:
-        return merged_report
-
     for report in reports_ls:
         for outer_key, inner_dict in report.items():
             if outer_key not in merged_report:
