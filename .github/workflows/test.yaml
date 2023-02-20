@@ -27,7 +27,7 @@ jobs:
             pip install .[lint]
 
         - name: Run Black
-          run: black --check .
+          run: black --check . --diff
 
         - name: Run isort
           run: isort --check-only .
