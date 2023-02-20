@@ -143,7 +143,6 @@ def _create_node_from_call(
     node = CallTreeNode(**node_kwargs)
     for frame in trace:
         if frame.op in [x.value for x in CALL_OPCODES]:
-
             # NOTE: Because of the different meanings in structLog style gas values,
             # gas is not set for nodes created this way.
             child_node_kwargs = {"address": frame.stack[-2][-20:], "depth": frame.depth}
