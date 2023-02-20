@@ -51,3 +51,7 @@ def test_merge_single_report():
     actual = merge_reports(reports[0])
     expected = reports[0]
     assert actual == expected
+
+
+def test_merge_no_reports():
+    assert merge_reports() == {}

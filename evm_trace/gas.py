@@ -30,7 +30,11 @@ def merge_reports(*reports: GasReport) -> GasReport:
     If given a single report, it only returns it.
     """
     reports_ls = list(reports)
-    if len(reports_ls) == 1:
+    num_reports = len(reports_ls)
+    if num_reports == 0:
+        return {}
+
+    elif num_reports == 1:
         return reports_ls[0]
 
     merged_report: GasReport = copy.deepcopy(reports_ls.pop(0))

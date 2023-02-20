@@ -6,7 +6,7 @@ from ethpm_types import BaseModel, HexBytes
 from pydantic import Field, validator
 
 from evm_trace.base import CallTreeNode
-from evm_trace.enums import CallType
+from evm_trace.enums import CALL_OPCODES, CallType
 
 
 class TraceFrame(BaseModel):
@@ -142,19 +142,19 @@ def _create_node_from_call(
 
     node = CallTreeNode(**node_kwargs)
     for frame in trace:
-        if frame.op in ("CALL", "DELEGATECALL", "STATICCALL"):
+        if frame.op in [x.value for x in CALL_OPCODES]:
 
             # NOTE: Because of the different meanings in structLog style gas values,
             # gas is not set for nodes created this way.
             child_node_kwargs = {"address": frame.stack[-2][-20:], "depth": frame.depth}
 
-            if frame.op == "CALL":
+            if frame.op == CallType.CALL.value:
                 child_node_kwargs["call_type"] = CallType.CALL
                 child_node_kwargs["value"] = int(frame.stack[-3].hex(), 16)
                 child_node_kwargs["calldata"] = _extract_memory(
                     offset=frame.stack[-4], size=frame.stack[-5], memory=frame.memory
                 )
-            elif frame.op == "DELEGATECALL":
+            elif frame.op == CallType.DELEGATECALL.value:
                 child_node_kwargs["call_type"] = CallType.DELEGATECALL
                 child_node_kwargs["calldata"] = _extract_memory(
                     offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
@@ -172,7 +172,7 @@ def _create_node_from_call(
 
         # TODO: Handle internal nodes using JUMP and JUMPI
 
-        elif frame.op == "SELFDESTRUCT":
+        elif frame.op == CallType.SELFDESTRUCT.value:
             # TODO: Handle the internal value transfer
             node.selfdestruct = True
             break
