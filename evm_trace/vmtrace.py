@@ -5,7 +5,7 @@ from typing import Any, Dict, Iterator, List, Optional, Type, Union
 from eth.vm.memory import Memory
 from eth.vm.stack import Stack
 from eth_utils import to_checksum_address
-from hexbytes import HexBytes
+from ethpm_types import HexBytes
 from msgspec import Struct
 from msgspec.json import Decoder
 

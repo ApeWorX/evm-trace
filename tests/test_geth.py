@@ -1,5 +1,5 @@
 import pytest
-from hexbytes import HexBytes
+from ethpm_types import HexBytes
 from pydantic import ValidationError
 
 from evm_trace.enums import CallType
