@@ -86,14 +86,46 @@ def get_calltree_from_geth_trace(
         :class:`~evm_trace.base.CallTreeNode`: Call tree of transaction trace.
     """
 
-    return _create_node_from_call(
+    return _create_node(
         trace=trace,
         show_internal=show_internal,
         **root_node_kwargs,
     )
 
 
-def _extract_memory(offset: HexBytes, size: HexBytes, memory: List[HexBytes]) -> HexBytes:
+def create_call_node_data(frame: TraceFrame) -> Dict:
+    """
+    Parse a CALL-opcode frame into an address and calldata.
+
+    Args:
+        frame (:class:`~evm_trace.geth.TraceFrame`): The call frame to parse.
+
+    Returns:
+        Tuple[str, HexBytes]: A tuple of the address str and the calldata.
+    """
+
+    data = {"address": frame.stack[-2][-20:], "depth": frame.depth}
+    if frame.op == CallType.CALL.value:
+        data["call_type"] = CallType.CALL
+        data["value"] = int(frame.stack[-3].hex(), 16)
+        data["calldata"] = extract_memory(
+            offset=frame.stack[-4], size=frame.stack[-5], memory=frame.memory
+        )
+    elif frame.op == CallType.DELEGATECALL.value:
+        data["call_type"] = CallType.DELEGATECALL
+        data["calldata"] = extract_memory(
+            offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
+        )
+    else:
+        data["call_type"] = CallType.STATICCALL
+        data["calldata"] = extract_memory(
+            offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
+        )
+
+    return data
+
+
+def extract_memory(offset: HexBytes, size: HexBytes, memory: List[HexBytes]) -> HexBytes:
     """
     Extracts memory from the EVM stack.
 
@@ -129,7 +161,7 @@ def _extract_memory(offset: HexBytes, size: HexBytes, memory: List[HexBytes]) ->
     return HexBytes(return_bytes)
 
 
-def _create_node_from_call(
+def _create_node(
     trace: Iterator[TraceFrame], show_internal: bool = False, **node_kwargs
 ) -> CallTreeNode:
     """
@@ -145,29 +177,9 @@ def _create_node_from_call(
         if frame.op in [x.value for x in CALL_OPCODES]:
             # NOTE: Because of the different meanings in structLog style gas values,
             # gas is not set for nodes created this way.
-            child_node_kwargs = {"address": frame.stack[-2][-20:], "depth": frame.depth}
-
-            if frame.op == CallType.CALL.value:
-                child_node_kwargs["call_type"] = CallType.CALL
-                child_node_kwargs["value"] = int(frame.stack[-3].hex(), 16)
-                child_node_kwargs["calldata"] = _extract_memory(
-                    offset=frame.stack[-4], size=frame.stack[-5], memory=frame.memory
-                )
-            elif frame.op == CallType.DELEGATECALL.value:
-                child_node_kwargs["call_type"] = CallType.DELEGATECALL
-                child_node_kwargs["calldata"] = _extract_memory(
-                    offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
-                )
-            else:
-                child_node_kwargs["call_type"] = CallType.STATICCALL
-                child_node_kwargs["calldata"] = _extract_memory(
-                    offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
-                )
-
-            child_node = _create_node_from_call(
-                trace=trace, show_internal=show_internal, **child_node_kwargs
-            )
-            node.calls.append(child_node)
+            data = create_call_node_data(frame)
+            child = _create_node(trace=trace, show_internal=show_internal, **data)
+            node.calls.append(child)
 
         # TODO: Handle internal nodes using JUMP and JUMPI
 
@@ -181,7 +193,7 @@ def _create_node_from_call(
             break
 
         elif frame.op in ("RETURN", "REVERT") and not node.returndata:
-            node.returndata = _extract_memory(
+            node.returndata = extract_memory(
                 offset=frame.stack[-1], size=frame.stack[-2], memory=frame.memory
             )
             # TODO: Handle "execution halted" vs. gas limit reached
