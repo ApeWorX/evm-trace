@@ -59,9 +59,8 @@ setup(
     install_requires=[
         "pydantic>=1.10.1,<2",
         "py-evm>=0.6.0a1",
-        "hexbytes>=0.2.3,<1",
         "eth-utils>=2",
-        "ethpm-types>=0.3.7,<0.4",
+        "ethpm-types>=0.4.0,<0.5",
         "msgspec>=0.8",
     ],
     python_requires=">=3.8,<4",

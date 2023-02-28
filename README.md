@@ -37,9 +37,10 @@ from web3 import HTTPProvider, Web3
 from evm_trace import TraceFrame
 
 web3 = Web3(HTTPProvider("https://path.to.my.node"))
+txn_hash = "0x..."
 struct_logs = web3.manager.request_blocking("debug_traceTransaction", [txn_hash]).structLogs
 for item in struct_logs:
-    yield TraceFrame(**item)
+    frame = TraceFrame.parse_obj(item)
 ```
 
 If you want to get the call-tree node, you can do:
