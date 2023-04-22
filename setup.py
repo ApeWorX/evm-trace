@@ -10,11 +10,11 @@ extras_require = {
         "eth-hash[pysha3]",  # For eth-utils address checksumming
     ],
     "lint": [
-        "black>=23.1.0",  # auto-formatter and linter
-        "mypy>=0.991",  # Static type analyzer
-        "types-setuptools",  # Needed due to mypy typeshed
-        "flake8>=5.0.4",  # Style linter
-        "isort>=5.10.1",  # Import sorting linter
+        "black>=23.3.0,<24",  # Auto-formatter and linter
+        "mypy>=0.991,<1",  # Static type analyzer
+        "types-setuptools",  # Needed for mypy type shed
+        "flake8>=6.0.0,<7",  # Style linter
+        "isort>=5.10.1,<6",  # Import sorting linter
         "mdformat>=0.7.16",  # Auto-formatter for markdown
         "mdformat-gfm>=0.3.5",  # Needed for formatting GitHub-flavored markdown
         "mdformat-frontmatter>=0.4.1",  # Needed for frontmatters-style headers in issue templates
@@ -58,9 +58,9 @@ setup(
     include_package_data=True,
     install_requires=[
         "pydantic>=1.10.1,<2",
-        "py-evm>=0.6.0a1",
-        "eth-utils>=2",
-        "ethpm-types>=0.4.0,<0.5",
+        "py-evm==0.6.1a2",
+        "eth-utils>=2.1,<3",
+        "ethpm-types>=0.4.1,<0.5",
         "msgspec>=0.8",
     ],
     python_requires=">=3.8,<4",
