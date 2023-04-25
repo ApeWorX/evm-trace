@@ -14,5 +14,8 @@ class CallType(Enum):
     def __eq__(self, other):
         return self.value == getattr(other, "value", other)
 
+    def __hash__(self) -> int:
+        return hash(self.value)
+
 
 CALL_OPCODES = (CallType.CALL, CallType.CALLCODE, CallType.DELEGATECALL, CallType.STATICCALL)
