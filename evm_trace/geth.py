@@ -1,5 +1,5 @@
 import math
-from typing import Dict, Iterator, List
+from typing import Dict, Iterator, List, Optional
 
 from eth_utils import to_int
 from ethpm_types import BaseModel, HexBytes
@@ -44,6 +44,18 @@ class TraceFrame(BaseModel):
     @validator("pc", "gas", "gas_cost", "depth", pre=True)
     def validate_ints(cls, value):
         return int(value, 16) if isinstance(value, str) else value
+
+    @property
+    def address(self) -> Optional[HexBytes]:
+        """
+        The address of this CALL frame.
+        Only returns a value for the call opcodes; else returns ``None``.
+        """
+
+        if self.op not in CALL_OPCODES:
+            return None
+
+        return HexBytes(self.stack[-2][-20:])
 
 
 def get_calltree_from_geth_call_trace(data: Dict) -> CallTreeNode:
@@ -104,7 +116,7 @@ def create_call_node_data(frame: TraceFrame) -> Dict:
         Tuple[str, HexBytes]: A tuple of the address str and the calldata.
     """
 
-    data = {"address": frame.stack[-2][-20:], "depth": frame.depth}
+    data: Dict = {"address": frame.address, "depth": frame.depth}
     if frame.op == CallType.CALL.value:
         data["call_type"] = CallType.CALL
         data["value"] = int(frame.stack[-3].hex(), 16)

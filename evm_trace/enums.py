@@ -11,5 +11,8 @@ class CallType(Enum):
     CALLCODE = "CALLCODE"
     SELFDESTRUCT = "SELFDESTRUCT"
 
+    def __eq__(self, other):
+        return self.value == getattr(other, "value", other)
+
 
 CALL_OPCODES = (CallType.CALL, CallType.CALLCODE, CallType.DELEGATECALL, CallType.STATICCALL)

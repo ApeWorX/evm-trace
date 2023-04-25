@@ -43,6 +43,10 @@ class TestTraceFrame:
         with pytest.raises(ValidationError):
             TraceFrame(**data)
 
+    def test_address(self, call_frame_data):
+        frame = TraceFrame(**call_frame_data)
+        assert frame.address == HexBytes("0x274b028b03a250ca03644e6c578d81f019ee1323")
+
 
 def test_get_calltree_from_geth_trace(trace_frame_data):
     trace_frame_data["op"] = "RETURN"
