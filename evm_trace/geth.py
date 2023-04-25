@@ -49,7 +49,7 @@ class TraceFrame(BaseModel):
     def address(self) -> Optional[HexBytes]:
         """
         The address of this CALL frame.
-        Only returns a value for the call opcodes; else returns ``None``.
+        Only returns a value if this frame's opcode is a call-based opcode.
         """
 
         if self.op not in CALL_OPCODES:
