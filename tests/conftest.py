@@ -25,6 +25,32 @@ TRACE_FRAME_DATA = {
         "aadb61a4b4c5d48b7a5669391b7c73852a3ab7795f24721b9a439220b54b591b": "0000000000000000000000000000000000000000000000000000000000000001",  # noqa: E501
     },
 }
+CALL_FRAME_DATA = {
+    "pc": 359,
+    "op": "CALL",
+    "gas": 29971782,
+    "gasCost": 22369,
+    "depth": 1,
+    "stack": [
+        "0xf552a8b8",
+        "0x274b028b03a250ca03644e6c578d81f019ee1323",
+        "0x00",
+        "0x60",
+        "0x24",
+        "0x7c",
+        "0x00",
+        "0x274b028b03a250ca03644e6c578d81f019ee1323",
+        "0x01c95546",
+    ],
+    "memory": [
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "0x000000000000000000000000000000000000000000000000000000004420e486",
+        "0x0000000000000000000000001e59ce931b4cfea3fe4b875411e280e173cb7a9c",
+    ],
+    "storage": {},
+}
 MUTABLE_CALL_TREE_DATA = {
     "call_type": CallType.CALL,
     "address": HexBytes("0xf2df0b975c0c9efa2f8ca0491c2d1685104d2488"),
@@ -391,6 +417,11 @@ CALL_TREE_DATA_MAP = {
 @pytest.fixture(scope="session")
 def trace_frame_data():
     return TRACE_FRAME_DATA
+
+
+@pytest.fixture(scope="session")
+def call_frame_data():
+    return CALL_FRAME_DATA
 
 
 @pytest.fixture(scope="session")
