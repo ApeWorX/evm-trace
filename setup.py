@@ -60,7 +60,7 @@ setup(
         "pydantic>=1.10.1,<2",
         "py-evm==0.6.1a2",
         "eth-utils>=2.1,<3",
-        "ethpm-types>=0.4.1,<0.5",
+        "ethpm-types>=0.4.5,<0.5",
         "msgspec>=0.8",
     ],
     python_requires=">=3.8,<4",
@@ -82,5 +82,6 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
 )
