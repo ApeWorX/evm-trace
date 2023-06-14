@@ -47,7 +47,7 @@ class TreeRepresentation:
         if self.call.calldata:
             call_path = f"{call_path}." if call_path else ""
             method_id = (
-                "__init__"
+                "__new__"
                 if "CREATE" in self.call.call_type.value
                 else f"<{self.call.calldata[:4].hex()}>"
             )
