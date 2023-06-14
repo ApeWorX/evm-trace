@@ -46,7 +46,12 @@ class TreeRepresentation:
         call_path = str(address) if address else ""
         if self.call.calldata:
             call_path = f"{call_path}." if call_path else ""
-            call_path = f"{call_path}<{self.call.calldata[:4].hex()}>"
+            method_id = (
+                "__init__"
+                if "CREATE" in self.call.call_type.value
+                else f"<{self.call.calldata[:4].hex()}>"
+            )
+            call_path = f"{call_path}{method_id}"
 
         call_path = (
             f"[reverted] {call_path}" if self.call.failed and self.parent is None else call_path
