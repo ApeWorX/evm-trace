@@ -213,7 +213,7 @@ DELEGATE_CALL_TREE_DATA = {
     "selfdestruct": False,
     "failed": False,
 }
-GETH_CALL_TRACE_DATA = {
+CALL_TRACE_DATA = {
     "type": "CALL",
     "from": "0x1e59ce931b4cfea3fe4b875411e280e173cb7a9c",
     "to": "0xf2df0b975c0c9efa2f8ca0491c2d1685104d2488",
@@ -407,6 +407,16 @@ GETH_CALL_TRACE_DATA = {
         },
     ],
 }
+DEPLOY_CALL_TRACE_DATA = {
+    "from": "0x1e59ce931b4cfea3fe4b875411e280e173cb7a9c",
+    "gas": "0x47d5cc",
+    "gasUsed": "0x11204",
+    "to": "0x274b028b03a250ca03644e6c578d81f019ee1323",
+    "input": "0x61004f61000f60003961004f6000f36003361161000c57610037565b60003560e01c3461003d57639a40e3f68118610035576024361061003d57600160405260206040f35b505b60006000fd5b600080fda165767970657283000307000b",  # noqa: E501
+    "output": "0x6003361161000c57610037565b60003560e01c3461003d57639a40e3f68118610035576024361061003d57600160405260206040f35b505b60006000fd5b600080fda165767970657283000307000b",  # noqa: E501
+    "value": "0x0",
+    "type": "CREATE",
+}
 CALL_TREE_DATA_MAP = {
     CallType.CALL.value: MUTABLE_CALL_TREE_DATA,
     CallType.STATICCALL.value: STATIC_CALL_TREE_DATA,
@@ -416,17 +426,38 @@ CALL_TREE_DATA_MAP = {
 
 @pytest.fixture(scope="session")
 def trace_frame_data():
+    """
+    One frame of data from `debug_traceTransaction` using the
+    `structLog` tracer (default).
+    """
     return TRACE_FRAME_DATA
 
 
 @pytest.fixture(scope="session")
 def call_frame_data():
+    """
+    One frame of data from `debug_traceTransaction` using the
+    `structLog` tracer (default) for a CALL frame.
+    """
     return CALL_FRAME_DATA
 
 
 @pytest.fixture(scope="session")
-def geth_call_trace_data():
-    return GETH_CALL_TRACE_DATA
+def call_trace_data():
+    """
+    The data you get from `debug_traceTransaction` using the
+    `callTracer` tracer.
+    """
+    return CALL_TRACE_DATA
+
+
+@pytest.fixture(scope="session")
+def deploy_call_trace_data():
+    """
+    The data you get from `debug_traceTransaction` using the
+    `callTracer` tracer from a deploy transaction.
+    """
+    return DEPLOY_CALL_TRACE_DATA
 
 
 @pytest.fixture(

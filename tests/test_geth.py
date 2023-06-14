@@ -68,8 +68,8 @@ def test_get_calltree_from_geth_trace(trace_frame_data):
     assert actual.returndata == returndata
 
 
-def test_get_calltree_from_geth_call_trace(geth_call_trace_data):
-    node = get_calltree_from_geth_call_trace(geth_call_trace_data)
+def test_get_calltree_from_geth_call_trace(call_trace_data):
+    node = get_calltree_from_geth_call_trace(call_trace_data)
     expected = """
     CALL: 0xF2Df0b975c0C9eFa2f8CA0491C2d1685104d2488.<0x372dca07> [280038 gas]
 ├── CALL: 0xBcF7FFFD8B256Ec51a36782a52D0c34f6474D951.<0x045856de> [34004 gas]
@@ -91,4 +91,10 @@ def test_get_calltree_from_geth_call_trace(geth_call_trace_data):
     ├── STATICCALL: 0x274b028b03A250cA03644E6c578D81f019eE1323.<0x7007cbe8> [1497 gas]
     └── CALL: 0x274b028b03A250cA03644E6c578D81f019eE1323.<0x878fb701> [25758 gas]
     """
+    assert repr(node) == expected.strip()
+
+
+def test_get_call_tree_from_call_deploy_call_trace(deploy_call_trace_data):
+    node = get_calltree_from_geth_call_trace(deploy_call_trace_data)
+    expected = "CREATE: 0x274b028b03A250cA03644E6c578D81f019eE1323.<0x61004f61> [70148 gas]"
     assert repr(node) == expected.strip()
