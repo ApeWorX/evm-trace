@@ -45,13 +45,14 @@ class TreeRepresentation:
         cost = self.call.gas_cost
         call_path = str(address) if address else ""
         if self.call.calldata:
-            call_path = f"{call_path}." if call_path else ""
+            call_path = call_path or ""
+
+            # Since is prefixed with CREATE, no method ID needed.
             method_id = (
-                "__new__"
-                if "CREATE" in self.call.call_type.value
-                else f"<{self.call.calldata[:4].hex()}>"
+                "" if "CREATE" in self.call.call_type.value else f"<{self.call.calldata[:4].hex()}>"
             )
-            call_path = f"{call_path}{method_id}"
+            sep = "." if call_path and method_id else ""
+            call_path = f"{call_path}{sep}{method_id}"
 
         call_path = (
             f"[reverted] {call_path}" if self.call.failed and self.parent is None else call_path

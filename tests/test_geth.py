@@ -96,5 +96,5 @@ def test_get_calltree_from_geth_call_trace(call_trace_data):
 
 def test_get_call_tree_from_call_deploy_call_trace(deploy_call_trace_data):
     node = get_calltree_from_geth_call_trace(deploy_call_trace_data)
-    expected = "CREATE: 0x274b028b03A250cA03644E6c578D81f019eE1323.__new__ [70148 gas]"
+    expected = "CREATE: 0x274b028b03A250cA03644E6c578D81f019eE1323 [70148 gas]"
     assert repr(node) == expected.strip()
