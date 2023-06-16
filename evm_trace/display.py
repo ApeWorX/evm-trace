@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Iterator, Optional, cast
 from eth_typing import ChecksumAddress
 from eth_utils import to_checksum_address
 
+from evm_trace.enums import CallType
+
 if TYPE_CHECKING:
     from evm_trace.base import CallTreeNode
 
@@ -43,14 +45,22 @@ class TreeRepresentation:
             address = cast(ChecksumAddress, address_hex_str)
 
         cost = self.call.gas_cost
-        call_path = str(address) if address else ""
+        call_path = str(address) if address and int(address, 16) else ""
         if self.call.calldata:
             call_path = call_path or ""
 
             # Since is prefixed with CREATE, no method ID needed.
-            method_id = (
-                "" if "CREATE" in self.call.call_type.value else f"<{self.call.calldata[:4].hex()}>"
-            )
+            if (
+                "CREATE" in self.call.call_type.value
+                or self.call.call_type == CallType.SELFDESTRUCT
+            ):
+                # Don't use one, the call-type prefix says enough.
+                method_id = ""
+
+            else:
+                hex_id = self.call.calldata[:4].hex()
+                method_id = f"<{hex_id}>" if hex_id else ""
+
             sep = "." if call_path and method_id else ""
             call_path = f"{call_path}{sep}{method_id}"
 
