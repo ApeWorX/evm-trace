@@ -153,7 +153,7 @@ def extract_memory(offset: HexBytes, size: HexBytes, memory: List[HexBytes]) -> 
     size_int = to_int(size)
 
     if size_int == 0:
-        return HexBytes(0)
+        return HexBytes("")
 
     offset_int = to_int(offset)
 

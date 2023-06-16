@@ -16,7 +16,7 @@ class CallTreeNode(BaseModel):
     call_type: CallType
     """The type of call."""
 
-    address: HexBytes = HexBytes(0)
+    address: HexBytes = HexBytes("")
     """The contract address of the call."""
 
     value: int = 0
@@ -35,10 +35,10 @@ class CallTreeNode(BaseModel):
     gas_cost: Optional[int] = None  # calculated from call starting and return
     """The cost to execute this opcode."""
 
-    calldata: HexBytes = HexBytes(0)
+    calldata: HexBytes = HexBytes("")
     """Transaction calldata (inputs)."""
 
-    returndata: HexBytes = HexBytes(0)
+    returndata: HexBytes = HexBytes("")
     """Transaction returndata (outputs)."""
 
     calls: List["CallTreeNode"] = []
