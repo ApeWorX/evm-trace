@@ -49,12 +49,11 @@ class TreeRepresentation:
         if self.call.calldata:
             call_path = call_path or ""
 
-            # Since is prefixed with CREATE, no method ID needed.
             if (
                 "CREATE" in self.call.call_type.value
                 or self.call.call_type == CallType.SELFDESTRUCT
             ):
-                # Don't use one, the call-type prefix says enough.
+                # No method ID needed, the call-type prefix is clear enough.
                 method_id = ""
 
             else:
