@@ -18,4 +18,11 @@ class CallType(Enum):
         return hash(self.value)
 
 
-CALL_OPCODES = (CallType.CALL, CallType.CALLCODE, CallType.DELEGATECALL, CallType.STATICCALL)
+CALL_OPCODES = (
+    CallType.CALL,
+    CallType.CALLCODE,
+    CallType.CREATE,
+    CallType.CREATE2,
+    CallType.DELEGATECALL,
+    CallType.STATICCALL,
+)
