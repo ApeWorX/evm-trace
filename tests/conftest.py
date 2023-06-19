@@ -1,6 +1,7 @@
 import pytest
 from hexbytes import HexBytes
 
+from evm_trace import ParityTrace, ParityTraceList
 from evm_trace.enums import CallType
 
 TRACE_FRAME_DATA = {
@@ -417,6 +418,49 @@ DEPLOY_CALL_TRACE_DATA = {
     "value": "0x0",
     "type": "CREATE",
 }
+PARITY_CREATE2_TRACE = [
+    {
+        "action": {
+            "from": "0x1e59ce931b4cfea3fe4b875411e280e173cb7a9c",
+            "to": "0x274b028b03a250ca03644e6c578d81f019ee1323",
+            "value": "0x0",
+            "gas": "0xf939",
+            "input": "0xfdf80bda000000000000000000000000274b028b03a250ca03644e6c578d81f019ee1323",
+            "callType": "call",
+        },
+        "result": {
+            "gasUsed": "0xf939",
+            "output": "0x000000000000000000000000d34889481d02656564e061dab813532b5ad9d109",
+        },
+        "traceAddress": [],
+        "subtraces": 1,
+        "transactionPosition": 0,
+        "transactionHash": "0x0fbf5ad961c0d49a8820ea096b451fd4ddac46ee541987f5d1d75b98a1423c0e",
+        "blockNumber": 2,
+        "blockHash": "0x1566836b5b3bc8a4de85b9a3dcab3d7627d8c98279aeace2b477e577806131f1",
+        "type": "call",
+    },
+    {
+        "action": {
+            "from": "0x274b028b03a250ca03644e6c578d81f019ee1323",
+            "value": "0x0",
+            "gas": "0x7a0e",
+            "init": "0x6200009c3d81600b3d39f36003361161000c57610084565b60003560e01c3461008a5763fdf80bda8118610082576024361061008a576004358060a01c61008a57604052604051803b59811561008a578160381b6a620000003d81600b3d39f317815281600060208301853c607b600b8301601583016000f5801561008a5790509050905060605260206060f35b505b60006000fd5b600080fda165767970657283000307000b",  # noqa: E501
+        },
+        "result": {
+            "gasUsed": "0x7a0e",
+            "code": "0x6003361161000c57610084565b60003560e01c3461008a5763fdf80bda8118610082576024361061008a576004358060a01c61008a57604052604051803b59811561008a578160381b6a620000003d81600b3d39f317815281600060208301853c607b600b8301601583016000f5801561008a5790509050905060605260206060f35b505b60006000fd5b600080fda165767970657283000307000b",  # noqa: E501
+            "address": "0xd34889481d02656564e061dab813532b5ad9d109",
+        },
+        "traceAddress": [0],
+        "subtraces": 0,
+        "transactionPosition": 0,
+        "transactionHash": "0x0fbf5ad961c0d49a8820ea096b451fd4ddac46ee541987f5d1d75b98a1423c0e",
+        "blockNumber": 2,
+        "blockHash": "0x1566836b5b3bc8a4de85b9a3dcab3d7627d8c98279aeace2b477e577806131f1",
+        "type": "create",
+    },
+]
 CALL_TREE_DATA_MAP = {
     CallType.CALL.value: MUTABLE_CALL_TREE_DATA,
     CallType.STATICCALL.value: STATIC_CALL_TREE_DATA,
@@ -466,3 +510,9 @@ def deploy_call_trace_data():
 )
 def call_tree_data(request):
     yield CALL_TREE_DATA_MAP[request.param]
+
+
+@pytest.fixture
+def parity_create2_trace_list():
+    trace_list = [ParityTrace.parse_obj(x) for x in PARITY_CREATE2_TRACE]
+    return ParityTraceList(__root__=trace_list)
