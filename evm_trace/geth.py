@@ -7,6 +7,7 @@ from pydantic import Field, validator
 
 from evm_trace.base import CallTreeNode
 from evm_trace.enums import CALL_OPCODES, CallType
+from evm_trace.utils import to_address
 
 
 class TraceFrame(BaseModel):
@@ -52,7 +53,8 @@ class TraceFrame(BaseModel):
         Only returns a value if this frame's opcode is a call-based opcode.
         """
 
-        if self.op not in CALL_OPCODES:
+        if self.op not in CALL_OPCODES or CallType.CREATE.value in self.op:
+            # CREATE address is handled elsewhere when creating CallTreeNode.
             return None
 
         return HexBytes(self.stack[-2][-20:])
@@ -128,6 +130,11 @@ def create_call_node_data(frame: TraceFrame) -> Dict:
         data["calldata"] = extract_memory(
             offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
         )
+    elif frame.op == CallType.CREATE.value:
+        data["call_type"] = CallType.CREATE
+    elif frame.op == CallType.CREATE2.value:
+        data["call_type"] = CallType.CREATE2
+
     else:
         data["call_type"] = CallType.STATICCALL
         data["calldata"] = extract_memory(
@@ -184,32 +191,53 @@ def _create_node(
     if show_internal:
         raise NotImplementedError()
 
-    node = CallTreeNode(**node_kwargs)
+    # Store node details and do all validation at the end.
+    # This allow us to wild-hold required properties until they are known.
     for frame in trace:
+        if (
+            node_kwargs.get("last_create_depth")
+            and frame.depth == node_kwargs["last_create_depth"][-1]
+        ):
+            node_kwargs["last_create_depth"].pop()
+            for subcall in node_kwargs.get("calls", [])[::-1]:
+                if subcall.call_type in (CallType.CREATE, CallType.CREATE2):
+                    subcall.address = HexBytes(to_address(frame.stack[-1][-40:]))
+                    break
+
         if frame.op in [x.value for x in CALL_OPCODES]:
             # NOTE: Because of the different meanings in structLog style gas values,
             # gas is not set for nodes created this way.
             data = create_call_node_data(frame)
-            child = _create_node(trace=trace, show_internal=show_internal, **data)
-            node.calls.append(child)
+            if data.get("call_type") in (CallType.CREATE, CallType.CREATE2):
+                data["last_create_depth"] = [frame.depth]
+                if "last_create_depth" in node_kwargs:
+                    node_kwargs["last_create_depth"].append(frame.depth)
+                else:
+                    node_kwargs["last_create_depth"] = [frame.depth]
+
+            subcall = _create_node(trace=trace, show_internal=show_internal, **data)
+            if "calls" in node_kwargs:
+                node_kwargs["calls"].append(subcall)
+            else:
+                node_kwargs["calls"] = [subcall]
 
         # TODO: Handle internal nodes using JUMP and JUMPI
 
         elif frame.op == CallType.SELFDESTRUCT.value:
             # TODO: Handle the internal value transfer
-            node.selfdestruct = True
+            node_kwargs["selfdestruct"] = True
             break
 
         elif frame.op == "STOP":
             # TODO: Handle "execution halted" vs. gas limit reached
             break
 
-        elif frame.op in ("RETURN", "REVERT") and not node.returndata:
-            node.returndata = extract_memory(
+        elif frame.op in ("RETURN", "REVERT") and not node_kwargs.get("returndata"):
+            node_kwargs["returndata"] = extract_memory(
                 offset=frame.stack[-1], size=frame.stack[-2], memory=frame.memory
             )
             # TODO: Handle "execution halted" vs. gas limit reached
-            node.failed = frame.op == "REVERT"
+            node_kwargs["failed"] = frame.op == "REVERT"
             break
 
         # TODO: Handle invalid opcodes (`node.failed = True`)
@@ -217,6 +245,16 @@ def _create_node(
 
     # TODO: Handle "execution halted" vs. gas limit reached
 
+    if "last_create_depth" in node_kwargs:
+        del node_kwargs["last_create_depth"]
+
+    if node_kwargs["call_type"] in (CallType.CREATE, CallType.CREATE2) and not node_kwargs.get(
+        "address"
+    ):
+        # Set temporary address so validation succeeds.
+        node_kwargs["address"] = 20 * b"\x00"
+
+    node = CallTreeNode(**node_kwargs)
     return node
 
 

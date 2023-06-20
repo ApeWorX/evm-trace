@@ -98,3 +98,20 @@ def test_get_call_tree_from_call_deploy_call_trace(deploy_call_trace_data):
     node = get_calltree_from_geth_call_trace(deploy_call_trace_data)
     expected = "CREATE: 0x274b028b03A250cA03644E6c578D81f019eE1323 [70148 gas]"
     assert repr(node) == expected.strip()
+
+
+def test_get_call_tree_from_create2_struct_logs(geth_create2_trace_frames):
+    address = "0x274b028b03A250cA03644E6c578D81f019eE1323"
+    calldata = "0x88ab52d4000000000000000000000000274b028b03a250ca03644e6c578d81f019ee1323"
+    node = get_calltree_from_geth_trace(
+        (x for x in geth_create2_trace_frames),
+        call_type=CallType.CALL,
+        address=address,
+        gas_limit=30000000,
+        calldata=HexBytes(calldata),
+    )
+    expected = f"""
+CALL: {address}.<{calldata[:10]}>
+└── CREATE2: 0xD34889481D02656564e061DAB813532b5AD9d109
+    """.strip()
+    assert repr(node) == expected.strip()
