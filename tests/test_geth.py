@@ -112,11 +112,12 @@ def test_get_call_tree_from_create2_struct_logs(geth_create2_trace_frames):
     )
     expected = f"""
 CALL: {address}.<{calldata[:10]}>
-└── CREATE2: 0x4E8Cc180d82Ce6eFe24a3D88D2f9C3F2E7F8c7D1
+└── CREATE2: 0x7c23b43594428A657718713FF246C609EeDDfAFf
     """.strip()
     assert len(node.calls) == 1
     assert repr(node) == expected.strip()
 
+    expected_value = 123
     expected_calldata = HexBytes(
         "0x00000000000000000000000000000000000000000000000000000000000"
         "00000000000000000000000000000bcf7fffd8b256ec51a36782a52d0c34f"
@@ -137,4 +138,5 @@ CALL: {address}.<{calldata[:10]}>
         "00000000000000000000000000000000000000000000000003"
     )
     create_node = node.calls[0]
+    assert create_node.value == expected_value
     assert create_node.calldata.startswith(expected_calldata)

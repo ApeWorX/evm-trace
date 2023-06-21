@@ -132,8 +132,10 @@ def create_call_node_data(frame: TraceFrame) -> Dict:
         )
     elif frame.op == CallType.CREATE.value:
         data["call_type"] = CallType.CREATE
+        data["value"] = int(frame.stack[-1].hex(), 16)
     elif frame.op == CallType.CREATE2.value:
         data["call_type"] = CallType.CREATE2
+        data["value"] = int(frame.stack[-1].hex(), 16)
     else:
         data["call_type"] = CallType.STATICCALL
         data["calldata"] = extract_memory(
@@ -204,7 +206,7 @@ def _create_node(
             for subcall in node_kwargs.get("calls", [])[::-1]:
                 if subcall.call_type in (CallType.CREATE, CallType.CREATE2):
                     subcall.address = HexBytes(to_address(frame.stack[-1][-40:]))
-                    # TODO: Set value ( dont know where it is yet )
+                    subcall.value = int(frame.stack[-3].hex(), 16)
                     subcall.calldata = extract_memory(
                         offset=frame.stack[-4], size=frame.stack[-5], memory=frame.memory
                     )
