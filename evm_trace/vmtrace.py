@@ -4,10 +4,11 @@ from typing import Any, Dict, Iterator, List, Optional, Type, Union
 
 from eth.vm.memory import Memory
 from eth.vm.stack import Stack
-from eth_utils import to_checksum_address
 from ethpm_types import HexBytes
 from msgspec import Struct
 from msgspec.json import Decoder
+
+from evm_trace.utils import to_address
 
 # opcodes grouped by the number of items they pop from the stack
 # fmt: off
@@ -89,11 +90,6 @@ class VMTraceFrame(Struct):
     stack: List[int]
     memory: Union[bytes, memoryview]
     storage: Dict[int, int]
-
-
-def to_address(value):
-    # clear the padding and expand to 32 bytes
-    return to_checksum_address(value[-20:].rjust(20, b"\x00"))
 
 
 def to_trace_frames(

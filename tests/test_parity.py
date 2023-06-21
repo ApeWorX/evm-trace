@@ -6,6 +6,7 @@ from evm_trace.parity import ParityTraceList, get_calltree_from_parity_trace
 
 from .expected_traces import (
     PARITY_CALL_TRACE_EXPECTED_OUTPUT,
+    PARITY_CREATE2_EXPECTED_OUTPUT,
     PARITY_CREATE_REVERT_TRACE_EXPECTED_OUTPUT,
     PARITY_CREATE_TRACE_EXPECTED_OUTPUT,
     PARITY_OUT_OF_GAS_TRACE_EXPECTED_OUTPUT,
@@ -37,4 +38,11 @@ def test_parity(name):
     actual = repr(get_calltree_from_parity_trace(traces))
 
     expected = EXPECTED_OUTPUT_MAP[name].strip()
+    assert actual == expected
+
+
+def test_create2(parity_create2_trace_list):
+    call_tree = get_calltree_from_parity_trace(parity_create2_trace_list)
+    actual = repr(call_tree)
+    expected = PARITY_CREATE2_EXPECTED_OUTPUT.strip()
     assert actual == expected

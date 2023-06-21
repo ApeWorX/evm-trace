@@ -1,0 +1,13 @@
+{
+    "call_type": "DELEGATECALL",
+    "address": "0xaa1a02671440be41545d83bddff2bf2488628c10",
+    "value": 0,
+    "depth": 3,
+    "gas_limit": 163575,
+    "gas_cost": 161021,
+    "calldata": "0x70a0823100000000000000000000000077924185cf0cbb2ae0b746a0086a065d6875b0a5",
+    "returndata": "0x00000000000000000000000000000000000000000001136eac81315861fd80a7",
+    "calls": [],
+    "selfdestruct": false,
+    "failed": false
+}

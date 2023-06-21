@@ -150,13 +150,13 @@ def get_calltree_from_parity_trace(
         create_result: Optional[CreateResult] = (
             cast(CreateResult, root.result) if root.result is not None else None
         )
-
         node_kwargs.update(
             value=create_action.value,
             gas_limit=create_action.gas,
+            calldata=create_action.init,
         )
         if create_result:
-            node_kwargs.update(gas_used=create_result.gas_used, address=create_result.address)
+            node_kwargs.update(gas_cost=create_result.gas_used, address=create_result.address)
 
     elif root.call_type in (
         CallType.CALL,
