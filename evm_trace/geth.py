@@ -134,7 +134,6 @@ def create_call_node_data(frame: TraceFrame) -> Dict:
         data["call_type"] = CallType.CREATE
     elif frame.op == CallType.CREATE2.value:
         data["call_type"] = CallType.CREATE2
-
     else:
         data["call_type"] = CallType.STATICCALL
         data["calldata"] = extract_memory(
@@ -198,10 +197,17 @@ def _create_node(
             node_kwargs.get("last_create_depth")
             and frame.depth == node_kwargs["last_create_depth"][-1]
         ):
+            # If we get here, we are in the process of completing the attributes from
+            # a CREATE(2) node. The data is located at the first frame with the same depth
+            # after the CREATE(2) opcode was found. This idea is copied from Brownie.
             node_kwargs["last_create_depth"].pop()
             for subcall in node_kwargs.get("calls", [])[::-1]:
                 if subcall.call_type in (CallType.CREATE, CallType.CREATE2):
                     subcall.address = HexBytes(to_address(frame.stack[-1][-40:]))
+                    # TODO: Set value ( dont know where it is yet )
+                    subcall.calldata = extract_memory(
+                        offset=frame.stack[-4], size=frame.stack[-5], memory=frame.memory
+                    )
                     break
 
         if frame.op in [x.value for x in CALL_OPCODES]:

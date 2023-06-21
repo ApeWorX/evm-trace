@@ -1,0 +1,13 @@
+{
+    "call_type": "STATICCALL",
+    "address": "0x274b028b03a250ca03644e6c578d81f019ee1323",
+    "value": 0,
+    "depth": 2,
+    "gas_limit": 375554,
+    "gas_cost": 369688,
+    "calldata": "0x7007cbe8",
+    "returndata": "0x000000000000000000000000000000000293b0e3558d33b8a4c483e40e2b8db9000000000000000000000000000000000000000000000000018b932eebcc7eb90000000000000000000000000000000000bf550935e92f79f09e3530df8660c5",
+    "calls": [],
+    "selfdestruct": false,
+    "failed": false
+}
