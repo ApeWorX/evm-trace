@@ -1,13 +1,21 @@
 import math
+from functools import cached_property
 from typing import Dict, Iterator, List, Optional
 
 from eth_utils import to_int
-from ethpm_types import BaseModel, HexBytes
+from ethpm_types import HexBytes
 from pydantic import Field, validator
 
-from evm_trace.base import CallTreeNode
+from evm_trace.base import BaseModel, CallTreeNode
 from evm_trace.enums import CALL_OPCODES, CallType
 from evm_trace.utils import to_address
+
+
+class TraceMemory(BaseModel):
+    __root__: List[HexBytes] = []
+
+    def get(self, offset: HexBytes, size: HexBytes):
+        return extract_memory(offset, size, self.__root__)
 
 
 class TraceFrame(BaseModel):
@@ -36,7 +44,7 @@ class TraceFrame(BaseModel):
     stack: List[HexBytes] = []
     """Execution stack."""
 
-    memory: List[HexBytes] = []
+    memory: TraceMemory = TraceMemory()
     """Execution memory."""
 
     storage: Dict[HexBytes, HexBytes] = {}
@@ -46,7 +54,7 @@ class TraceFrame(BaseModel):
     def validate_ints(cls, value):
         return int(value, 16) if isinstance(value, str) else value
 
-    @property
+    @cached_property
     def address(self) -> Optional[HexBytes]:
         """
         The address of this CALL frame.
@@ -122,14 +130,10 @@ def create_call_node_data(frame: TraceFrame) -> Dict:
     if frame.op == CallType.CALL.value:
         data["call_type"] = CallType.CALL
         data["value"] = int(frame.stack[-3].hex(), 16)
-        data["calldata"] = extract_memory(
-            offset=frame.stack[-4], size=frame.stack[-5], memory=frame.memory
-        )
+        data["calldata"] = frame.memory.get(frame.stack[-4], frame.stack[-5])
     elif frame.op == CallType.DELEGATECALL.value:
         data["call_type"] = CallType.DELEGATECALL
-        data["calldata"] = extract_memory(
-            offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
-        )
+        data["calldata"] = frame.memory.get(frame.stack[-3], frame.stack[-4])
 
     # `calldata` and `address` are handle in later frames for CREATE and CREATE2.
     elif frame.op == CallType.CREATE.value:
@@ -141,9 +145,7 @@ def create_call_node_data(frame: TraceFrame) -> Dict:
 
     else:
         data["call_type"] = CallType.STATICCALL
-        data["calldata"] = extract_memory(
-            offset=frame.stack[-3], size=frame.stack[-4], memory=frame.memory
-        )
+        data["calldata"] = frame.memory.get(frame.stack[-3], frame.stack[-4])
 
     return data
 
@@ -192,6 +194,12 @@ def _create_node(
     https://www.evm.codes/
     """
 
+    if isinstance(trace, list):
+        # NOTE: We don't officially support lists here,
+        # but if we don't do this, the user gets a recursion error
+        # and it is confusing as to why.
+        trace = iter(trace)
+
     if show_internal:
         raise NotImplementedError()
 
@@ -209,9 +217,7 @@ def _create_node(
             for subcall in node_kwargs.get("calls", [])[::-1]:
                 if subcall.call_type in (CallType.CREATE, CallType.CREATE2):
                     subcall.address = HexBytes(to_address(frame.stack[-1][-40:]))
-                    subcall.calldata = extract_memory(
-                        offset=frame.stack[-4], size=frame.stack[-5], memory=frame.memory
-                    )
+                    subcall.calldata = frame.memory.get(frame.stack[-4], frame.stack[-5])
                     break
 
         if frame.op in [x.value for x in CALL_OPCODES]:
@@ -243,9 +249,8 @@ def _create_node(
             break
 
         elif frame.op in ("RETURN", "REVERT") and not node_kwargs.get("returndata"):
-            node_kwargs["returndata"] = extract_memory(
-                offset=frame.stack[-1], size=frame.stack[-2], memory=frame.memory
-            )
+            node_kwargs["returndata"] = frame.memory.get(frame.stack[-1], frame.stack[-2])
+
             # TODO: Handle "execution halted" vs. gas limit reached
             node_kwargs["failed"] = frame.op == "REVERT"
             break
