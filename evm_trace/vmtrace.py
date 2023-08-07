@@ -4,6 +4,7 @@ from typing import Any, Dict, Iterator, List, Optional, Type, Union
 
 from eth.vm.memory import Memory
 from eth.vm.stack import Stack
+from eth_utils import to_int
 from ethpm_types import HexBytes
 from msgspec import Struct
 from msgspec.json import Decoder
@@ -134,7 +135,7 @@ def to_trace_frames(
             pc=op.pc,
             op=op.op,
             depth=depth,
-            stack=[val for _, val in stack.values],
+            stack=[to_int(val) for _, val in stack.values],
             memory=read_memory(0, len(memory)),
             storage=storage.copy(),
         )
