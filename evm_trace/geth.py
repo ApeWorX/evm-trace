@@ -50,6 +50,7 @@ class TraceFrame(BaseModel):
     """Contract storage."""
 
     contract_address: Optional[HexBytes] = None
+    """The address producing the frame."""
 
     @validator("pc", "gas", "gas_cost", "depth", pre=True)
     def validate_ints(cls, value):
