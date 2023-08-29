@@ -1,4 +1,5 @@
 import math
+from itertools import tee
 from typing import Dict, Iterator, List, Optional
 
 from eth_utils import to_int
@@ -91,9 +92,10 @@ def create_trace_frames(data: Iterator[Dict]) -> Iterator[TraceFrame]:
     for frame in frames:
         if CallType.CREATE.value in frame.get("op", ""):
             # Before yielding, find the address of the CREATE.
-            call_frames = []
+            frames, frames_copy = tee(frames)
+
             start_depth = frame.get("depth", 0)
-            for next_frame in frames:
+            for next_frame in frames_copy:
                 depth = next_frame.get("depth", 0)
                 if depth == start_depth:
                     # Extract the address for the original CREATE using
@@ -107,20 +109,9 @@ def create_trace_frames(data: Iterator[Dict]) -> Iterator[TraceFrame]:
                             # Potentially, a transaction was made with poor data.
                             frame["contract_address"] = raw_addr
 
-                    # Yield the original CREATE frame with an address.
-                    yield TraceFrame(**frame)
                     break
 
-                elif depth > start_depth:
-                    call_frames.append(next_frame)
-
-            # Yield all the CREATE's frames after the CREATE frame.
-            for call_frame in call_frames:
-                yield TraceFrame(**call_frame)
-
-        else:
-            # Every frame besides frames related to CREATE and CREATE2.
-            yield TraceFrame(**frame)
+        yield TraceFrame(**frame)
 
 
 def get_calltree_from_geth_call_trace(data: Dict) -> CallTreeNode:
