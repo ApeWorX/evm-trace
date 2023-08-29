@@ -1,5 +1,5 @@
 import math
-from functools import cached_property
+from itertools import tee
 from typing import Dict, Iterator, List, Optional
 
 from eth_utils import to_int
@@ -50,22 +50,68 @@ class TraceFrame(BaseModel):
     storage: Dict[HexBytes, HexBytes] = {}
     """Contract storage."""
 
+    contract_address: Optional[HexBytes] = None
+    """The address producing the frame."""
+
     @validator("pc", "gas", "gas_cost", "depth", pre=True)
     def validate_ints(cls, value):
         return int(value, 16) if isinstance(value, str) else value
 
-    @cached_property
+    @property
     def address(self) -> Optional[HexBytes]:
         """
         The address of this CALL frame.
         Only returns a value if this frame's opcode is a call-based opcode.
         """
 
-        if self.op not in CALL_OPCODES or CallType.CREATE.value in self.op:
-            # CREATE address is handled elsewhere when creating CallTreeNode.
-            return None
+        if not self.contract_address and (
+            self.op in CALL_OPCODES and CallType.CREATE.value not in self.op
+        ):
+            self.contract_address = HexBytes(self.stack[-2][-20:])
 
-        return HexBytes(self.stack[-2][-20:])
+        return self.contract_address
+
+
+def create_trace_frames(data: Iterator[Dict]) -> Iterator[TraceFrame]:
+    """
+    Get trace frames from ``debug_traceTransaction`` response items.
+    Sets the ``contract_address`` for CREATE and CREATE2 frames by
+    looking ahead and finding it.
+
+    Args:
+        data (Iterator[Dict]): An iterator of response struct logs.
+
+    Returns:
+        Iterator[:class:`~evm_trace.geth.TraceFrame`]
+    """
+
+    # NOTE: Use a new iter in case a list or something is passed in.
+    # This logic requires an iterator.
+    frames = iter(data)
+
+    for frame in frames:
+        if CallType.CREATE.value in frame.get("op", ""):
+            # Before yielding, find the address of the CREATE.
+            frames, frames_copy = tee(frames)
+
+            start_depth = frame.get("depth", 0)
+            for next_frame in frames_copy:
+                depth = next_frame.get("depth", 0)
+                if depth == start_depth:
+                    # Extract the address for the original CREATE using
+                    # the first frame after the CREATE with an equal depth.
+                    stack = next_frame.get("stack", [])
+                    if len(stack) > 0:
+                        raw_addr = HexBytes(stack[-1][-40:])
+                        try:
+                            frame["contract_address"] = HexBytes(to_address(raw_addr))
+                        except Exception:
+                            # Potentially, a transaction was made with poor data.
+                            frame["contract_address"] = raw_addr
+
+                    break
+
+        yield TraceFrame(**frame)
 
 
 def get_calltree_from_geth_call_trace(data: Dict) -> CallTreeNode:

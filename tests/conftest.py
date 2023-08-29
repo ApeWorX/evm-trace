@@ -77,5 +77,11 @@ def parity_create2_trace_list():
 
 
 @pytest.fixture
-def geth_create2_trace_frames():
-    return [TraceFrame(**x) for x in GETH_CREATE2_TRACE]
+def geth_create2_struct_logs():
+    return GETH_CREATE2_TRACE
+
+
+@pytest.fixture
+def geth_create2_trace_frames(geth_create2_struct_logs):
+    # NOTE: These frames won't have the CREATE address set.
+    return [TraceFrame(**x) for x in geth_create2_struct_logs]
