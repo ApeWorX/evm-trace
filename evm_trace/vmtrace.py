@@ -154,6 +154,10 @@ def to_trace_frames(
             for item in op.ex.push:
                 stack.push_bytes(item)
 
+            # erigon bug: https://github.com/ledgerwatch/erigon/pull/7970
+            if op.op == "PUSH0" and not op.ex.push:
+                stack.push_int(0)
+
             if op.ex.store:
                 storage[op.ex.store.key] = op.ex.store.val
 
