@@ -5,6 +5,7 @@ from pydantic import ValidationError
 from evm_trace.enums import CallType
 from evm_trace.geth import (
     TraceFrame,
+    create_trace_frames,
     get_calltree_from_geth_call_trace,
     get_calltree_from_geth_trace,
 )
@@ -62,6 +63,29 @@ def test_get_calltree_from_geth_trace(trace_frame_data):
         "returndata": returndata,
     }
     frames = (TraceFrame(**d) for d in (trace_frame_data,))
+    actual = get_calltree_from_geth_trace(frames, **root_node_kwargs)
+
+    # Tests against a bug where we could not set the return data.
+    assert actual.returndata == returndata
+
+
+def test_get_calltree_from_geth_trace_when_given_list(trace_frame_data):
+    """
+    Ensure we don't get recursion error!
+    """
+    trace_frame_data["op"] = "RETURN"
+    returndata = HexBytes("0x0000000000000000000000004d4d2c55eae97a04acafb66011df29463b665732")
+    root_node_kwargs = {
+        "gas_cost": 123,
+        "gas_limit": 1234,
+        "address": "0x56764a0000000000000000000000000000000031",
+        "calldata": HexBytes("0x21325"),
+        "value": 34,
+        "call_type": CallType.CALL,
+        "failed": False,
+        "returndata": returndata,
+    }
+    frames = [TraceFrame(**trace_frame_data)]
     actual = get_calltree_from_geth_trace(frames, **root_node_kwargs)
 
     # Tests against a bug where we could not set the return data.
@@ -135,3 +159,15 @@ CALL: {address}.<{calldata[:10]}>
     create_node = node.calls[0]
     assert create_node.value == expected_value
     assert create_node.calldata.startswith(expected_calldata)
+
+
+def test_create_trace_frames_from_geth_create2_struct_logs(
+    geth_create2_struct_logs, geth_create2_trace_frames
+):
+    frames = list(create_trace_frames(geth_create2_struct_logs))
+    assert frames != geth_create2_trace_frames
+
+    assert "CREATE2" in [f.op for f in frames]
+    for frame in frames:
+        if frame.op == "CREATE2":
+            assert frame.address == HexBytes("0x7c23b43594428a657718713ff246c609eeddfaff")

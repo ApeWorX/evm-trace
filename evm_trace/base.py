@@ -1,10 +1,25 @@
+from functools import cached_property, singledispatchmethod
 from typing import List, Optional
 
-from ethpm_types import BaseModel, HexBytes
+from ethpm_types import BaseModel as _BaseModel
+from ethpm_types import HexBytes
 from pydantic import validator
 
 from evm_trace.display import get_tree_display
 from evm_trace.enums import CallType
+
+
+class BaseModel(_BaseModel):
+    class Config:
+        # NOTE: Due to https://github.com/samuelcolvin/pydantic/issues/1241 we have
+        # to add this cached property workaround in order to avoid this error:
+
+        #    TypeError: cannot pickle '_thread.RLock' object
+
+        keep_untouched = (cached_property, singledispatchmethod)
+        arbitrary_types_allowed = True
+        underscore_attrs_are_private = True
+        copy_on_model_validation = "none"
 
 
 class CallTreeNode(BaseModel):
