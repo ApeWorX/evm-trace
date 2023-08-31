@@ -1,5 +1,4 @@
 import math
-from itertools import tee
 from typing import Dict, Iterator, List, Optional
 
 from eth_utils import to_int
@@ -90,28 +89,37 @@ def create_trace_frames(data: Iterator[Dict]) -> Iterator[TraceFrame]:
     frames = iter(data)
 
     for frame in frames:
-        if CallType.CREATE.value in frame.get("op", ""):
-            # Before yielding, find the address of the CREATE.
-            frames, frames_copy = tee(frames)
+        frame_obj = TraceFrame(**frame)
 
+        if CallType.CREATE.value in frame.get("op", ""):
+            # Look ahead to find the address.
+
+            create_frames = [frame_obj]
             start_depth = frame.get("depth", 0)
-            for next_frame in frames_copy:
-                depth = next_frame.get("depth", 0)
-                if depth == start_depth:
+            for next_frame in frames:
+                next_frame_obj = TraceFrame.parse_obj(next_frame)
+                depth = next_frame_obj.depth
+
+                if depth <= start_depth:
                     # Extract the address for the original CREATE using
                     # the first frame after the CREATE with an equal depth.
-                    stack = next_frame.get("stack", [])
-                    if len(stack) > 0:
-                        raw_addr = HexBytes(stack[-1][-40:])
+                    if len(next_frame_obj.stack) > 0:
+                        raw_addr = HexBytes(next_frame_obj.stack[-1][-40:])
                         try:
-                            frame["contract_address"] = HexBytes(to_address(raw_addr))
+                            frame_obj.contract_address = HexBytes(to_address(raw_addr))
                         except Exception:
                             # Potentially, a transaction was made with poor data.
-                            frame["contract_address"] = raw_addr
+                            frame_obj.contract_address = raw_addr
 
+                    create_frames.append(next_frame_obj)
+                    yield from create_frames
                     break
 
-        yield TraceFrame(**frame)
+                elif depth > start_depth:
+                    create_frames.append(next_frame_obj)
+
+        else:
+            yield TraceFrame(**frame)
 
 
 def get_calltree_from_geth_call_trace(data: Dict) -> CallTreeNode:

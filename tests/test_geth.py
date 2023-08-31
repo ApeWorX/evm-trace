@@ -165,6 +165,7 @@ def test_create_trace_frames_from_geth_create2_struct_logs(
     geth_create2_struct_logs, geth_create2_trace_frames
 ):
     frames = list(create_trace_frames(geth_create2_struct_logs))
+    assert len(frames) == len(geth_create2_trace_frames)
     assert frames != geth_create2_trace_frames
 
     assert "CREATE2" in [f.op for f in frames]
