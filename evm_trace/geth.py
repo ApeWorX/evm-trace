@@ -91,35 +91,44 @@ def create_trace_frames(data: Iterator[Dict]) -> Iterator[TraceFrame]:
     for frame in frames:
         frame_obj = TraceFrame(**frame)
 
-        if CallType.CREATE.value in frame.get("op", ""):
+        if CallType.CREATE.value in frame_obj.op:
             # Look ahead to find the address.
-
-            create_frames = [frame_obj]
-            start_depth = frame.get("depth", 0)
-            for next_frame in frames:
-                next_frame_obj = TraceFrame.parse_obj(next_frame)
-                depth = next_frame_obj.depth
-
-                if depth <= start_depth:
-                    # Extract the address for the original CREATE using
-                    # the first frame after the CREATE with an equal depth.
-                    if len(next_frame_obj.stack) > 0:
-                        raw_addr = HexBytes(next_frame_obj.stack[-1][-40:])
-                        try:
-                            frame_obj.contract_address = HexBytes(to_address(raw_addr))
-                        except Exception:
-                            # Potentially, a transaction was made with poor data.
-                            frame_obj.contract_address = raw_addr
-
-                    create_frames.append(next_frame_obj)
-                    yield from create_frames
-                    break
-
-                elif depth > start_depth:
-                    create_frames.append(next_frame_obj)
+            create_frames = _get_create_frames(frame_obj, frames)
+            yield from create_frames
 
         else:
             yield TraceFrame(**frame)
+
+
+def _get_create_frames(frame: TraceFrame, frames: Iterator[Dict]) -> List[TraceFrame]:
+    create_frames = [frame]
+    start_depth = frame.depth
+    for next_frame in frames:
+        next_frame_obj = TraceFrame.parse_obj(next_frame)
+        depth = next_frame_obj.depth
+
+        if CallType.CREATE.value in next_frame_obj.op:
+            # Handle CREATE within a CREATE.
+            create_frames.extend(_get_create_frames(next_frame_obj, frames))
+
+        elif depth <= start_depth:
+            # Extract the address for the original CREATE using
+            # the first frame after the CREATE with an equal depth.
+            if len(next_frame_obj.stack) > 0:
+                raw_addr = HexBytes(next_frame_obj.stack[-1][-40:])
+                try:
+                    frame.contract_address = HexBytes(to_address(raw_addr))
+                except Exception:
+                    # Potentially, a transaction was made with poor data.
+                    frame.contract_address = raw_addr
+
+            create_frames.append(next_frame_obj)
+            break
+
+        elif depth > start_depth:
+            create_frames.append(next_frame_obj)
+
+    return create_frames
 
 
 def get_calltree_from_geth_call_trace(data: Dict) -> CallTreeNode:
@@ -271,7 +280,9 @@ def _create_node(
             for subcall in node_kwargs.get("calls", [])[::-1]:
                 if subcall.call_type in (CallType.CREATE, CallType.CREATE2):
                     subcall.address = HexBytes(to_address(frame.stack[-1][-40:]))
-                    subcall.calldata = frame.memory.get(frame.stack[-4], frame.stack[-5])
+                    if len(frame.stack) >= 5:
+                        subcall.calldata = frame.memory.get(frame.stack[-4], frame.stack[-5])
+
                     break
 
         if frame.op in [x.value for x in CALL_OPCODES]:
