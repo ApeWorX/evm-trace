@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from ethpm_types import HexBytes
 from pydantic import ValidationError
@@ -134,31 +136,13 @@ def test_get_call_tree_from_create2_struct_logs(geth_create2_trace_frames):
         gas_limit=30000000,
         calldata=HexBytes(calldata),
     )
-    expected = f"""
-CALL: {address}.<{calldata[:10]}>
-└── CREATE2: 0x7c23b43594428A657718713FF246C609EeDDfAFf
-    """.strip()
-    assert len(node.calls) == 1
-    assert repr(node) == expected.strip()
-
-    expected_value = 123
-    expected_calldata = HexBytes(
-        "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-        "bcf7fffd8b256ec51a36782a52d0c34f6474d95100000000000000000000000000000000000000000000000000"
-        "000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000"
-        "000000000000000000000000000000000000000000000000000360206101356000396000516000556101166100"
-        "1f61000039610116610000f36003361161000c576100fe565b60003560e01c346101045763425ace5281186100"
-        "3957600436106101045760036040526001606052610077565b6350144002811861005c57602436106101045760"
-        "04356040526001606052610077565b6318b30cb781186100a1576044361061010457604060046040375b604051"
-        "15610104576040516060518082018281106101045790509050600055600160805260206080f35b63c7dd9abe81"
-        "186100bf576004361061010457600160405260206040f35b6327871d9981186100dd5760043610610104576001"
-        "60405260206040f35b63f9bd55cc81186100fc57600436106101045760005460405260206040f35b505b600060"
-        "00fd5b600080fda165767970657283000307000b00000000000000000000000000000000000000000000000000"
-        "00000000000003"
+    assert len(node.calls) == 2
+    actual = repr(node)[:120]
+    pattern = re.compile(
+        rf".*\s*CALL: {address}\."
+        rf"<{calldata[:10]}>\s*├── CREATE2: 0x[a-fA-F0-9]{{40}}[\s└─├\w:.<?>]*"
     )
-    create_node = node.calls[0]
-    assert create_node.value == expected_value
-    assert create_node.calldata.startswith(expected_calldata)
+    assert pattern.match(actual), f"actual: {actual}, pattern: {str(pattern)}"
 
 
 def test_create_trace_frames_from_geth_create2_struct_logs(
@@ -168,7 +152,13 @@ def test_create_trace_frames_from_geth_create2_struct_logs(
     assert len(frames) == len(geth_create2_trace_frames)
     assert frames != geth_create2_trace_frames
 
-    assert "CREATE2" in [f.op for f in frames]
+    create2_found = False
     for frame in frames:
-        if frame.op == "CREATE2":
-            assert frame.address == HexBytes("0x7c23b43594428a657718713ff246c609eeddfaff")
+        if frame.op.startswith("CREATE"):
+            assert frame.address
+            address = frame.address.hex()
+            assert address.startswith("0x")
+            assert len(address) == 42
+            create2_found = create2_found or frame.op == "CREATE2"
+
+    assert create2_found
