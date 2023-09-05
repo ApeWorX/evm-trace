@@ -3,7 +3,11 @@ from typing import Dict, Iterator, List, Optional
 
 from eth_utils import to_int
 from ethpm_types import HexBytes
-from pydantic import Field, validator
+
+try:
+    from pydantic.v1 import Field, validator
+except ImportError:
+    from pydantic import Field, validator
 
 from evm_trace.base import BaseModel, CallTreeNode
 from evm_trace.enums import CALL_OPCODES, CallType

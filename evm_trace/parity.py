@@ -1,6 +1,9 @@
 from typing import Any, Dict, List, Optional, Union, cast
 
-from pydantic import Field, validator
+try:
+    from pydantic.v1 import Field, validator
+except ImportError:
+    from pydantic import Field, validator
 
 from evm_trace.base import BaseModel, CallTreeNode
 from evm_trace.enums import CallType

@@ -2,7 +2,11 @@ import re
 
 import pytest
 from ethpm_types import HexBytes
-from pydantic import ValidationError
+
+try:
+    from pydantic.v1 import ValidationError
+except ImportError:
+    from pydantic import ValidationError
 
 from evm_trace.enums import CallType
 from evm_trace.geth import (
