@@ -4,11 +4,7 @@ from typing import List, Optional
 from ethpm_types import BaseModel as _BaseModel
 from ethpm_types import HexBytes
 
-try:
-    from pydantic.v1 import validator
-except ImportError:
-    from pydantic import validator
-
+from evm_trace._pydantic_compat import validator
 from evm_trace.display import get_tree_display
 from evm_trace.enums import CallType
 
