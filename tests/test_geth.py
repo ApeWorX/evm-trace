@@ -2,8 +2,8 @@ import re
 
 import pytest
 from ethpm_types import HexBytes
-from pydantic import ValidationError
 
+from evm_trace._pydantic_compat import ValidationError
 from evm_trace.enums import CallType
 from evm_trace.geth import (
     TraceFrame,

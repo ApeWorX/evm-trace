@@ -3,8 +3,8 @@ from typing import Dict, Iterator, List, Optional
 
 from eth_utils import to_int
 from ethpm_types import HexBytes
-from pydantic import Field, validator
 
+from evm_trace._pydantic_compat import Field, validator
 from evm_trace.base import BaseModel, CallTreeNode
 from evm_trace.enums import CALL_OPCODES, CallType
 from evm_trace.utils import to_address

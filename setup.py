@@ -10,12 +10,12 @@ extras_require = {
         "eth-hash[pysha3]",  # For eth-utils address checksumming
     ],
     "lint": [
-        "black>=23.7.0,<24",  # Auto-formatter and linter
-        "mypy>=1.4.1,<2",  # Static type analyzer
+        "black>=23.9.1,<24",  # Auto-formatter and linter
+        "mypy>=1.5.1,<2",  # Static type analyzer
         "types-setuptools",  # Needed for mypy type shed
         "flake8>=6.1.0,<7",  # Style linter
         "isort>=5.10.1,<6",  # Import sorting linter
-        "mdformat>=0.7.16",  # Auto-formatter for markdown
+        "mdformat>=0.7.17",  # Auto-formatter for markdown
         "mdformat-gfm>=0.3.5",  # Needed for formatting GitHub-flavored markdown
         "mdformat-frontmatter>=0.4.1",  # Needed for frontmatters-style headers in issue templates
     ],
@@ -57,7 +57,7 @@ setup(
     url="https://github.com/ApeWorX/evm-trace",
     include_package_data=True,
     install_requires=[
-        "pydantic>=1.10.1,<2",
+        "pydantic>=1.10.1,<3",
         "py-evm>=0.7.0a3,<0.8",
         "eth-utils>=2.1,<3",
         "ethpm-types>=0.5.0,<0.6",
