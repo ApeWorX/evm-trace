@@ -1,20 +1,19 @@
 import math
 from typing import Dict, Iterator, List, Optional
 
+from eth_pydantic_types import HashBytes20, HexBytes
 from eth_utils import to_int
-from ethpm_types import HexBytes
+from pydantic import Field, RootModel, field_validator
 
-from evm_trace._pydantic_compat import Field, validator
 from evm_trace.base import BaseModel, CallTreeNode
 from evm_trace.enums import CALL_OPCODES, CallType
-from evm_trace.utils import to_address
 
 
-class TraceMemory(BaseModel):
-    __root__: List[HexBytes] = []
+class TraceMemory(RootModel[List[HexBytes]]):
+    root: List[HexBytes] = []
 
     def get(self, offset: HexBytes, size: HexBytes):
-        return extract_memory(offset, size, self.__root__)
+        return extract_memory(offset, size, self.root)
 
 
 class TraceFrame(BaseModel):
@@ -49,15 +48,15 @@ class TraceFrame(BaseModel):
     storage: Dict[HexBytes, HexBytes] = {}
     """Contract storage."""
 
-    contract_address: Optional[HexBytes] = None
+    contract_address: Optional[HashBytes20] = None
     """The address producing the frame."""
 
-    @validator("pc", "gas", "gas_cost", "depth", pre=True)
+    @field_validator("pc", "gas", "gas_cost", "depth", mode="before")
     def validate_ints(cls, value):
         return int(value, 16) if isinstance(value, str) else value
 
     @property
-    def address(self) -> Optional[HexBytes]:
+    def address(self) -> Optional[HashBytes20]:
         """
         The address of this CALL frame.
         Only returns a value if this frame's opcode is a call-based opcode.
@@ -66,7 +65,7 @@ class TraceFrame(BaseModel):
         if not self.contract_address and (
             self.op in CALL_OPCODES and CallType.CREATE.value not in self.op
         ):
-            self.contract_address = HexBytes(self.stack[-2][-20:])
+            self.contract_address = HashBytes20.__eth_pydantic_validate__(self.stack[-2][-20:])
 
         return self.contract_address
 
@@ -104,7 +103,7 @@ def _get_create_frames(frame: TraceFrame, frames: Iterator[Dict]) -> List[TraceF
     create_frames = [frame]
     start_depth = frame.depth
     for next_frame in frames:
-        next_frame_obj = TraceFrame.parse_obj(next_frame)
+        next_frame_obj = TraceFrame.model_validate(next_frame)
         depth = next_frame_obj.depth
 
         if CallType.CREATE.value in next_frame_obj.op:
@@ -116,11 +115,7 @@ def _get_create_frames(frame: TraceFrame, frames: Iterator[Dict]) -> List[TraceF
             # the first frame after the CREATE with an equal depth.
             if len(next_frame_obj.stack) > 0:
                 raw_addr = HexBytes(next_frame_obj.stack[-1][-40:])
-                try:
-                    frame.contract_address = HexBytes(to_address(raw_addr))
-                except Exception:
-                    # Potentially, a transaction was made with poor data.
-                    frame.contract_address = raw_addr
+                frame.contract_address = HashBytes20.__eth_pydantic_validate__(raw_addr)
 
             create_frames.append(next_frame_obj)
             break
@@ -279,7 +274,7 @@ def _create_node(
             node_kwargs["last_create_depth"].pop()
             for subcall in node_kwargs.get("calls", [])[::-1]:
                 if subcall.call_type in (CallType.CREATE, CallType.CREATE2):
-                    subcall.address = HexBytes(to_address(frame.stack[-1][-40:]))
+                    subcall.address = HashBytes20.__eth_pydantic_validate__(frame.stack[-1][-40:])
                     if len(frame.stack) >= 5:
                         subcall.calldata = frame.memory.get(frame.stack[-4], frame.stack[-5])
 

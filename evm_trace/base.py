@@ -1,25 +1,19 @@
 from functools import cached_property, singledispatchmethod
 from typing import List, Optional
 
-from ethpm_types import BaseModel as _BaseModel
-from ethpm_types import HexBytes
+from eth_pydantic_types import HexBytes
+from pydantic import BaseModel as _BaseModel
+from pydantic import ConfigDict, field_validator
 
-from evm_trace._pydantic_compat import validator
 from evm_trace.display import get_tree_display
 from evm_trace.enums import CallType
 
 
 class BaseModel(_BaseModel):
-    class Config:
-        # NOTE: Due to https://github.com/samuelcolvin/pydantic/issues/1241 we have
-        # to add this cached property workaround in order to avoid this error:
-
-        #    TypeError: cannot pickle '_thread.RLock' object
-
-        keep_untouched = (cached_property, singledispatchmethod)
-        arbitrary_types_allowed = True
-        underscore_attrs_are_private = True
-        copy_on_model_validation = "none"
+    model_config = ConfigDict(
+        ignored_types=(cached_property, singledispatchmethod),
+        arbitrary_types_allowed=True,
+    )
 
 
 class CallTreeNode(BaseModel):
@@ -77,17 +71,14 @@ class CallTreeNode(BaseModel):
     def __getitem__(self, index: int) -> "CallTreeNode":
         return self.calls[index]
 
-    @validator("calldata", "returndata", "address", pre=True)
+    @field_validator("calldata", "returndata", "address", mode="before")
     def validate_bytes(cls, value):
         return HexBytes(value) if isinstance(value, str) else value
 
-    @validator("value", "depth", pre=True)
+    @field_validator("value", "depth", mode="before")
     def validate_ints(cls, value):
-        if not value:
-            return 0
+        return (int(value, 16) if isinstance(value, str) else value) if value else 0
 
-        return int(value, 16) if isinstance(value, str) else value
-
-    @validator("gas_limit", "gas_cost", pre=True)
+    @field_validator("gas_limit", "gas_cost", mode="before")
     def validate_optional_ints(cls, value):
         return int(value, 16) if isinstance(value, str) else value

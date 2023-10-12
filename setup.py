@@ -11,7 +11,7 @@ extras_require = {
     ],
     "lint": [
         "black>=23.9.1,<24",  # Auto-formatter and linter
-        "mypy>=1.5.1,<2",  # Static type analyzer
+        "mypy>=1.6.0,<2",  # Static type analyzer
         "types-setuptools",  # Needed for mypy type shed
         "flake8>=6.1.0,<7",  # Style linter
         "isort>=5.10.1,<6",  # Import sorting linter
@@ -57,11 +57,11 @@ setup(
     url="https://github.com/ApeWorX/evm-trace",
     include_package_data=True,
     install_requires=[
-        "pydantic>=1.10.1,<3",
+        "pydantic>=2.3.0,<3",
         "py-evm>=0.7.0a3,<0.8",
         "eth-utils>=2.1,<3",
-        "ethpm-types>=0.5.0,<0.6",
         "msgspec>=0.8",
+        "eth-pydantic-types>=0.1.0a2",
     ],
     python_requires=">=3.8,<4",
     extras_require=extras_require,

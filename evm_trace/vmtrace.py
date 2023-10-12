@@ -4,12 +4,10 @@ from typing import Any, Dict, Iterator, List, Optional, Type, Union
 
 from eth.vm.memory import Memory
 from eth.vm.stack import Stack
+from eth_pydantic_types import Address, HexBytes
 from eth_utils import to_int
-from ethpm_types import HexBytes
 from msgspec import Struct
 from msgspec.json import Decoder
-
-from evm_trace.utils import to_address
 
 # opcodes grouped by the number of items they pop from the stack
 # fmt: off
@@ -141,7 +139,7 @@ def to_trace_frames(
         )
 
         if op.op in ["CALL", "DELEGATECALL", "STATICCALL"]:
-            call_address = to_address(stack.values[-2][1])
+            call_address = Address.__eth_pydantic_validate__(stack.values[-2][1])
 
         if op.ex:
             if op.ex.mem:
@@ -188,9 +186,6 @@ def from_rpc_response(buffer: bytes) -> Union[VMTrace, List[VMTrace]]:
     """
     Decode structured data from a raw `trace_replayTransaction` or `trace_replayBlockTransactions`.
     """
-    resp = Decoder(RPCResponse, dec_hook=dec_hook).decode(buffer)
-
-    if isinstance(resp.result, list):
-        return [i.vmTrace for i in resp.result]
-
-    return resp.result.vmTrace
+    response = Decoder(RPCResponse, dec_hook=dec_hook).decode(buffer)
+    result: Union[List[RPCTraceResult], RPCTraceResult] = response.result
+    return [i.vmTrace for i in result] if isinstance(result, list) else result.vmTrace
