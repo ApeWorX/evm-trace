@@ -10,8 +10,8 @@ extras_require = {
         "eth-hash[pysha3]",  # For eth-utils address checksumming
     ],
     "lint": [
-        "black>=23.9.1,<24",  # Auto-formatter and linter
-        "mypy>=1.6.0,<2",  # Static type analyzer
+        "black>=23.10.1,<24",  # Auto-formatter and linter
+        "mypy>=1.6.1,<2",  # Static type analyzer
         "types-setuptools",  # Needed for mypy type shed
         "flake8>=6.1.0,<7",  # Style linter
         "isort>=5.10.1,<6",  # Import sorting linter
@@ -61,7 +61,7 @@ setup(
         "py-evm>=0.7.0a3,<0.8",
         "eth-utils>=2.1,<3",
         "msgspec>=0.8",
-        "eth-pydantic-types>=0.1.0a2",
+        "eth-pydantic-types>=0.1.0a3",
     ],
     python_requires=">=3.8,<4",
     extras_require=extras_require,
