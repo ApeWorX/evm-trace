@@ -75,7 +75,7 @@ setup(
     packages=find_packages(exclude=["tests", "tests.*"]),
     package_data={"evm_trace": ["py.typed"]},
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Natural Language :: English",
