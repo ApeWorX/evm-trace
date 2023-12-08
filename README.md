@@ -40,7 +40,7 @@ web3 = Web3(HTTPProvider("https://path.to.my.node"))
 txn_hash = "0x..."
 struct_logs = web3.manager.request_blocking("debug_traceTransaction", [txn_hash]).structLogs
 for item in struct_logs:
-    frame = TraceFrame.parse_obj(item)
+    frame = TraceFrame.model_validate(item)
 ```
 
 If you want to get the call-tree node, you can do:
@@ -69,7 +69,7 @@ If you are using a node that supports the `trace_transaction` RPC, you can use `
 from evm_trace import CallType, ParityTraceList
 
 raw_trace_list = web3.manager.request_blocking("trace_transaction", [txn_hash])
-trace_list = ParityTraceList.parse_obj(raw_trace_list)
+trace_list = ParityTraceList.model_validate(raw_trace_list)
 ```
 
 And to make call-tree nodes, you can do:

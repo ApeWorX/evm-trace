@@ -72,8 +72,8 @@ def call_tree_data(request):
 
 @pytest.fixture
 def parity_create2_trace_list():
-    trace_list = [ParityTrace.parse_obj(x) for x in PARITY_CREATE2_TRACE]
-    return ParityTraceList(__root__=trace_list)
+    trace_list = [ParityTrace.model_validate(x) for x in PARITY_CREATE2_TRACE]
+    return ParityTraceList(root=trace_list)
 
 
 @pytest.fixture

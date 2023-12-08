@@ -34,7 +34,7 @@ EXPECTED_OUTPUT_MAP = {
 def test_parity(name):
     assert name in EXPECTED_OUTPUT_MAP, f"Missing expected output set for '{name}'."
     path = DATA_PATH / f"{name}.json"
-    traces = ParityTraceList.parse_file(path)
+    traces = ParityTraceList.model_validate_json(path.read_text())
     actual = repr(get_calltree_from_parity_trace(traces))
 
     expected = EXPECTED_OUTPUT_MAP[name].strip()

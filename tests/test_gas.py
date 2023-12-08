@@ -1,6 +1,6 @@
 from typing import List
 
-from ethpm_types import HexBytes
+from eth_pydantic_types import HexBytes
 
 from evm_trace import CallTreeNode
 from evm_trace.gas import GasReport, get_gas_report, merge_reports

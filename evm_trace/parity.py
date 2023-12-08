@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Union, cast
 
-from evm_trace._pydantic_compat import Field, validator
+from pydantic import Field, RootModel, field_validator
+
 from evm_trace.base import BaseModel, CallTreeNode
 from evm_trace.enums import CallType
 
@@ -18,7 +19,7 @@ class CallAction(BaseModel):
     # only used to recover the specific call type
     call_type: str = Field(alias="callType", repr=False)
 
-    @validator("value", "gas", pre=True)
+    @field_validator("value", "gas", mode="before")
     def convert_integer(cls, v):
         return int(v, 16)
 
@@ -32,7 +33,7 @@ class CreateAction(BaseModel):
     init: str
     value: int
 
-    @validator("value", "gas", pre=True)
+    @field_validator("value", "gas", mode="before")
     def convert_integer(cls, v):
         return int(v, 16)
 
@@ -41,7 +42,7 @@ class SelfDestructAction(BaseModel):
     address: str
     balance: int
 
-    @validator("balance", pre=True)
+    @field_validator("balance", mode="before")
     def convert_integer(cls, v):
         return int(v, 16) if isinstance(v, str) else int(v)
 
@@ -59,7 +60,7 @@ class ActionResult(BaseModel):
     for gas per zero byte and ``16`` gas per non-zero byte.
     """
 
-    @validator("gas_used", pre=True)
+    @field_validator("gas_used", mode="before")
     def convert_integer(cls, v):
         return int(v, 16) if isinstance(v, str) else int(v)
 
@@ -95,26 +96,19 @@ class ParityTrace(BaseModel):
     trace_address: List[int] = Field(alias="traceAddress")
     transaction_hash: str = Field(alias="transactionHash")
 
-    @validator("call_type", pre=True)
-    def convert_call_type(cls, v, values) -> CallType:
-        if isinstance(values["action"], CallAction):
-            v = values["action"].call_type
-        value = v.upper()
+    @field_validator("call_type", mode="before")
+    def convert_call_type(cls, value, info) -> CallType:
+        if isinstance(info.data["action"], CallAction):
+            value = info.data["action"].call_type
+
+        value = value.upper()
         if value == "SUICIDE":
             value = "SELFDESTRUCT"
 
         return CallType(value)
 
 
-class ParityTraceList(BaseModel):
-    __root__: List[ParityTrace]
-
-    # pydantic models with custom root don't have this by default
-    def __iter__(self):
-        return iter(self.__root__)
-
-    def __getitem__(self, item):
-        return self.__root__[item]
+ParityTraceList = RootModel[List[ParityTrace]]
 
 
 def get_calltree_from_parity_trace(
@@ -137,7 +131,7 @@ def get_calltree_from_parity_trace(
     Returns:
         :class:`~evm_trace.base.CallTreeNode`
     """
-    root = root or traces[0]
+    root = root or traces.root[0]
     failed = root.error is not None
     node_kwargs: Dict[Any, Any] = {
         "call_type": root.call_type,
@@ -187,7 +181,7 @@ def get_calltree_from_parity_trace(
             address=selfdestruct_action.address,
         )
 
-    trace_list: List[ParityTrace] = list(traces)
+    trace_list: List[ParityTrace] = traces.root
     subtraces: List[ParityTrace] = [
         sub
         for sub in trace_list
@@ -196,5 +190,4 @@ def get_calltree_from_parity_trace(
     ]
     node_kwargs["calls"] = [get_calltree_from_parity_trace(traces, root=sub) for sub in subtraces]
     node_kwargs = {**node_kwargs, **root_kwargs}
-    node = CallTreeNode.parse_obj(node_kwargs)
-    return node
+    return CallTreeNode.model_validate(node_kwargs)
