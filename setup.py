@@ -60,7 +60,7 @@ setup(
     url="https://github.com/ApeWorX/evm-trace",
     include_package_data=True,
     install_requires=[
-        "pydantic>=2.4.2,<3",
+        "pydantic>=2.5.2,<3",
         "py-evm>=0.8.0b1,<0.9",
         "eth-utils>=2.3.1,<3",
         "msgspec>=0.8",
