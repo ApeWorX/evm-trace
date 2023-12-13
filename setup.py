@@ -62,7 +62,7 @@ setup(
     install_requires=[
         "pydantic>=2.4.2,<3",
         "py-evm>=0.8.0b1,<0.9",
-        "eth-utils>=2.1,<3",
+        "eth-utils>=2.3.1,<3",
         "msgspec>=0.8",
         "eth-pydantic-types>=0.1.0a4",
     ],
