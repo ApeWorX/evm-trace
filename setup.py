@@ -64,7 +64,7 @@ setup(
         "py-evm>=0.8.0b1,<0.9",
         "eth-utils>=2.3.1,<3",
         "msgspec>=0.8",
-        "eth-pydantic-types>=0.1.0a4",
+        "eth-pydantic-types>=0.1.0a5",
     ],
     python_requires=">=3.8,<4",
     extras_require=extras_require,
