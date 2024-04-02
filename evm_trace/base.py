@@ -1,5 +1,5 @@
 from functools import cached_property, singledispatchmethod
-from typing import List, Optional
+from typing import Optional
 
 from eth_pydantic_types import HexBytes
 from pydantic import BaseModel as _BaseModel
@@ -50,7 +50,7 @@ class CallTreeNode(BaseModel):
     returndata: HexBytes = HexBytes("")
     """Transaction returndata (outputs)."""
 
-    calls: List["CallTreeNode"] = []
+    calls: list["CallTreeNode"] = []
     """The list of external sub-calls this call makes."""
 
     selfdestruct: bool = False

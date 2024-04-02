@@ -1,11 +1,11 @@
 import copy
-from typing import Dict, List, TypeVar
+from typing import TypeVar
 
 from evm_trace.base import CallTreeNode
 
 ContractID = TypeVar("ContractID")
 MethodID = TypeVar("MethodID")
-GasReport = Dict[ContractID, Dict[MethodID, List[int]]]
+GasReport = dict[ContractID, dict[MethodID, list[int]]]
 
 
 def get_gas_report(calltree: CallTreeNode) -> GasReport:
