@@ -61,7 +61,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "pydantic>=2.5.2,<3",
-        "py-evm>=v0.9.0-beta.1,<0.10",
+        "py-evm>=0.9.0-beta.1,<0.10",
         "eth-utils>=2.3.1,<3",
         "msgspec>=0.8",
         "eth-pydantic-types>=0.1.0a5",
