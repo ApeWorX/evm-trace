@@ -133,7 +133,7 @@ def to_trace_frames(
             pc=op.pc,
             op=op.op,
             depth=depth,
-            stack=[to_int(val) for _, val in stack.values],
+            stack=[to_int(val) for val in stack.values],
             memory=read_memory(0, len(memory)),
             storage=storage.copy(),
         )
