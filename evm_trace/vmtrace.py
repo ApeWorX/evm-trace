@@ -139,7 +139,7 @@ def to_trace_frames(
         )
 
         if op.op in ["CALL", "DELEGATECALL", "STATICCALL"]:
-            call_address = Address.__eth_pydantic_validate__(stack.values[-2][1])
+            call_address = Address.__eth_pydantic_validate__(stack.values[-2])
 
         if op.ex:
             if op.ex.mem:
