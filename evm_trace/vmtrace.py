@@ -134,13 +134,13 @@ def to_trace_frames(
             pc=op.pc,
             op=op.op,
             depth=depth,
-            stack=[to_int(val) for _, val in stack.values],
+            stack=[to_int(val) for val in stack.values],
             memory=read_memory(0, len(memory)),
             storage=storage.copy(),
         )
 
         if op.op in ["CALL", "DELEGATECALL", "STATICCALL"]:
-            call_address = Address.__eth_pydantic_validate__(stack.values[-2][1])
+            call_address = Address.__eth_pydantic_validate__(stack.values[-2])
 
         if op.ex:
             if op.ex.mem:
