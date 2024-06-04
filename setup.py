@@ -10,8 +10,8 @@ extras_require = {
         "eth-hash[pysha3]",  # For eth-utils address checksumming
     ],
     "lint": [
-        "black>=24.3.0,<25",  # Auto-formatter and linter
-        "mypy>=1.9.0,<2",  # Static type analyzer
+        "black>=24.4.2,<25",  # Auto-formatter and linter
+        "mypy>=1.10.0,<2",  # Static type analyzer
         "types-setuptools",  # Needed for mypy type shed
         "flake8>=7.0.0,<8",  # Style linter
         "flake8-breakpoint>=1.1.0,<2",  # Detect breakpoints left in code
@@ -66,7 +66,7 @@ setup(
         "msgspec>=0.8",
         "eth-pydantic-types>=0.1.0a5",
     ],
-    python_requires=">=3.8,<4",
+    python_requires=">=3.9,<4",
     extras_require=extras_require,
     py_modules=["evm_trace"],
     license="Apache-2.0",
