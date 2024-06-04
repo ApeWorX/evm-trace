@@ -66,7 +66,7 @@ setup(
         "msgspec>=0.8",
         "eth-pydantic-types>=0.1.0a5",
     ],
-    python_requires=">=3.8,<4",
+    python_requires=">=3.9,<4",
     extras_require=extras_require,
     py_modules=["evm_trace"],
     license="Apache-2.0",
