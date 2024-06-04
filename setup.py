@@ -10,8 +10,8 @@ extras_require = {
         "eth-hash[pysha3]",  # For eth-utils address checksumming
     ],
     "lint": [
-        "black>=24.3.0,<25",  # Auto-formatter and linter
-        "mypy>=1.9.0,<2",  # Static type analyzer
+        "black>=24.4.2,<25",  # Auto-formatter and linter
+        "mypy>=1.10.0,<2",  # Static type analyzer
         "types-setuptools",  # Needed for mypy type shed
         "flake8>=7.0.0,<8",  # Style linter
         "flake8-breakpoint>=1.1.0,<2",  # Detect breakpoints left in code
