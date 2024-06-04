@@ -1,5 +1,6 @@
 import math
-from typing import Dict, Iterator, List, Optional
+from collections.abc import Iterator
+from typing import Optional
 
 from eth_pydantic_types import HashBytes20, HexBytes
 from eth_utils import to_int
@@ -9,8 +10,8 @@ from evm_trace.base import BaseModel, CallTreeNode
 from evm_trace.enums import CALL_OPCODES, CallType
 
 
-class TraceMemory(RootModel[List[HexBytes]]):
-    root: List[HexBytes] = []
+class TraceMemory(RootModel[list[HexBytes]]):
+    root: list[HexBytes] = []
 
     def get(self, offset: HexBytes, size: HexBytes):
         return extract_memory(offset, size, self.root)
@@ -39,13 +40,13 @@ class TraceFrame(BaseModel):
     The number of external jumps away the initially called contract (starts at 0).
     """
 
-    stack: List[HexBytes] = []
+    stack: list[HexBytes] = []
     """Execution stack."""
 
     memory: TraceMemory = TraceMemory()
     """Execution memory."""
 
-    storage: Dict[HexBytes, HexBytes] = {}
+    storage: dict[HexBytes, HexBytes] = {}
     """Contract storage."""
 
     contract_address: Optional[HashBytes20] = None
@@ -70,7 +71,7 @@ class TraceFrame(BaseModel):
         return self.contract_address
 
 
-def create_trace_frames(data: Iterator[Dict]) -> Iterator[TraceFrame]:
+def create_trace_frames(data: Iterator[dict]) -> Iterator[TraceFrame]:
     """
     Get trace frames from ``debug_traceTransaction`` response items.
     Sets the ``contract_address`` for CREATE and CREATE2 frames by
@@ -99,7 +100,7 @@ def create_trace_frames(data: Iterator[Dict]) -> Iterator[TraceFrame]:
             yield TraceFrame(**frame)
 
 
-def _get_create_frames(frame: TraceFrame, frames: Iterator[Dict]) -> List[TraceFrame]:
+def _get_create_frames(frame: TraceFrame, frames: Iterator[dict]) -> list[TraceFrame]:
     create_frames = [frame]
     start_depth = frame.depth
     for next_frame in frames:
@@ -126,7 +127,7 @@ def _get_create_frames(frame: TraceFrame, frames: Iterator[Dict]) -> List[TraceF
     return create_frames
 
 
-def get_calltree_from_geth_call_trace(data: Dict) -> CallTreeNode:
+def get_calltree_from_geth_call_trace(data: dict) -> CallTreeNode:
     """
     Creates a CallTreeNode from a given transaction call trace.
 
@@ -173,7 +174,7 @@ def get_calltree_from_geth_trace(
     )
 
 
-def create_call_node_data(frame: TraceFrame) -> Dict:
+def create_call_node_data(frame: TraceFrame) -> dict:
     """
     Parse a CALL-opcode frame into an address and calldata.
 
@@ -184,7 +185,7 @@ def create_call_node_data(frame: TraceFrame) -> Dict:
         Tuple[str, HexBytes]: A tuple of the address str and the calldata.
     """
 
-    data: Dict = {"address": frame.address, "depth": frame.depth}
+    data: dict = {"address": frame.address, "depth": frame.depth}
     if frame.op == CallType.CALL.value:
         data["call_type"] = CallType.CALL
         data["value"] = int(frame.stack[-3].hex(), 16)
@@ -208,7 +209,7 @@ def create_call_node_data(frame: TraceFrame) -> Dict:
     return data
 
 
-def extract_memory(offset: HexBytes, size: HexBytes, memory: List[HexBytes]) -> HexBytes:
+def extract_memory(offset: HexBytes, size: HexBytes, memory: list[HexBytes]) -> HexBytes:
     """
     Extracts memory from the EVM stack.
 
@@ -333,7 +334,7 @@ def _create_node(
     return node
 
 
-def _validate_data_from_call_tracer(data: Dict) -> Dict:
+def _validate_data_from_call_tracer(data: dict) -> dict:
     # Handle renames
     if "receiver" in data:
         data["address"] = data.pop("receiver")

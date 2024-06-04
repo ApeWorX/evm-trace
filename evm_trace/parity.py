@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 from pydantic import Field, RootModel, field_validator
 
@@ -93,7 +93,7 @@ class ParityTrace(BaseModel):
     call_type: CallType = Field(alias="type")
     result: Optional[ParityTraceResult] = None
     subtraces: int
-    trace_address: List[int] = Field(alias="traceAddress")
+    trace_address: list[int] = Field(alias="traceAddress")
     transaction_hash: str = Field(alias="transactionHash")
 
     @field_validator("call_type", mode="before")
@@ -108,7 +108,7 @@ class ParityTrace(BaseModel):
         return CallType(value)
 
 
-ParityTraceList = RootModel[List[ParityTrace]]
+ParityTraceList = RootModel[list[ParityTrace]]
 
 
 def get_calltree_from_parity_trace(
@@ -133,7 +133,7 @@ def get_calltree_from_parity_trace(
     """
     root = root or traces.root[0]
     failed = root.error is not None
-    node_kwargs: Dict[Any, Any] = {
+    node_kwargs: dict[Any, Any] = {
         "call_type": root.call_type,
         "failed": failed,
     }
@@ -181,8 +181,8 @@ def get_calltree_from_parity_trace(
             address=selfdestruct_action.address,
         )
 
-    trace_list: List[ParityTrace] = traces.root
-    subtraces: List[ParityTrace] = [
+    trace_list: list[ParityTrace] = traces.root
+    subtraces: list[ParityTrace] = [
         sub
         for sub in trace_list
         if len(sub.trace_address) == len(root.trace_address) + 1

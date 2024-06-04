@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Iterator, Optional, cast
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, Optional, cast
 
 from eth_typing import ChecksumAddress
 from eth_utils import to_checksum_address

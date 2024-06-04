@@ -1,5 +1,3 @@
-from typing import List
-
 from eth_pydantic_types import HexBytes
 
 from evm_trace import CallTreeNode
@@ -13,7 +11,7 @@ METHOD_A = HexBytes("0x181d60da")
 METHOD_B = HexBytes("0xc7cee1b7")
 METHOD_C = HexBytes("0xd76d0659")
 
-reports: List[GasReport] = [
+reports: list[GasReport] = [
     {
         CONTRACT_A: {METHOD_A: [100, 101, 100, 102]},
         CONTRACT_B: {METHOD_B: [200, 202, 202, 200, 200]},
