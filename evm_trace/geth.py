@@ -347,8 +347,6 @@ def _create_node(
 def _create_event_node(frame: TraceFrame) -> EventNode:
     # The number of topics is derived from the opcode,
     # e.g. LOG2 meaning 2 topics, the first being the selector.
-    # (in evm-trace, we just put the selector in its own field and the rest of the topics
-    # in the ``.topics`` field).
     num_topics = int(frame.op[3])
 
     # The selector always seems to be here.
@@ -357,7 +355,7 @@ def _create_event_node(frame: TraceFrame) -> EventNode:
 
     # Figure out topics.
     start_topic_idx = selector_idx - num_topics + 1
-    topics = [HexBytes(t) for t in reversed(frame.stack[start_topic_idx:selector_idx])]
+    topics = [selector, *[HexBytes(t) for t in reversed(frame.stack[start_topic_idx:selector_idx])]]
 
     # Figure out data.
     num_data_items = int(frame.stack[-2].hex(), 16) // 32
@@ -367,12 +365,7 @@ def _create_event_node(frame: TraceFrame) -> EventNode:
     end_data_idx = data_idx + num_data_items
     data = frame.memory.root[data_idx:end_data_idx]
 
-    return EventNode(
-        data=data,
-        depth=frame.depth,
-        selector=selector,
-        topics=topics,
-    )
+    return EventNode(data=data, depth=frame.depth, topics=topics)
 
 
 def _validate_data_from_call_tracer(data: dict) -> dict:

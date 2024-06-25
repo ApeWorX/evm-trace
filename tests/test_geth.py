@@ -150,11 +150,16 @@ CALL
 
     # Assert `.topics` is correct.
     assert actual_events[0].topics == [
+        HexBytes(expected_selector_0),
         HexBytes(f"0x000000000000000000000000{contract_a}"),
         HexBytes("0x0000000000000000000000000000000000000000000000000000000000000001"),
     ]
-    assert actual_events[1].topics == [HexBytes(f"0x000000000000000000000000{contract_a}")]
+    assert actual_events[1].topics == [
+        HexBytes(expected_selector_1),
+        HexBytes(f"0x000000000000000000000000{contract_a}"),
+    ]
     assert actual_events[2].topics == [
+        HexBytes(expected_selector_2),
         HexBytes("0x0000000000000000000000000000000000000000000000000000000000000005"),
         HexBytes("0x0000000000000000000000000000000000000000000000000000000000000006"),
         HexBytes("0x0000000000000000000000000000000000000000000000000000000000000007"),

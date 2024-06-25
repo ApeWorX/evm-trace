@@ -3,7 +3,7 @@ from typing import Optional
 
 from eth_pydantic_types import HexBytes
 from pydantic import BaseModel as _BaseModel
-from pydantic import ConfigDict, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
 from evm_trace.display import get_tree_display
 from evm_trace.enums import CallType
@@ -30,11 +30,15 @@ class EventNode(BaseModel):
     depth: int
     """The depth in a call-tree where the event took place."""
 
-    selector: HexBytes
-    """The selector hash of the event."""
+    topics: list[HexBytes] = Field(min_length=1)
+    """Event topics, including the selector."""
 
-    topics: list[HexBytes] = []
-    """Event topics."""
+    @property
+    def selector(self) -> HexBytes:
+        """
+        The selector is always the first topic.
+        """
+        return self.topics[0]
 
 
 class CallTreeNode(BaseModel):
