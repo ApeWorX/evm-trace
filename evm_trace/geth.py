@@ -346,7 +346,7 @@ def _create_node(
 
 def _create_event_node(frame: TraceFrame) -> EventNode:
     # The number of topics is derived from the opcode,
-    # e.g. LOG2 meaning 2 topics, the first being the selector.
+    # e.g. LOG2 meaning 2 topics (not counting the selector).
     num_topics = int(frame.op[3])
 
     # The selector always seems to be here.
