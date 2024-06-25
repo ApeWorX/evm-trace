@@ -16,6 +16,27 @@ class BaseModel(_BaseModel):
     )
 
 
+class EventNode(BaseModel):
+    """
+    An event emitted during a CALL.
+    """
+
+    call_type: CallType = CallType.EVENT
+    """The call-type for events is always ``EVENT``."""
+
+    data: list[HexBytes] = []
+    """The remaining event data besides the topics."""
+
+    depth: int
+    """The depth in a call-tree where the event took place."""
+
+    selector: HexBytes
+    """The selector hash of the event."""
+
+    topics: list[HexBytes] = []
+    """Event topics."""
+
+
 class CallTreeNode(BaseModel):
     """
     A higher-level object modeling a node in an execution call tree.
@@ -58,6 +79,9 @@ class CallTreeNode(BaseModel):
 
     failed: bool = False
     """Whether the call failed or not."""
+
+    events: list[EventNode] = []
+    """All events made in the call."""
 
     def __str__(self) -> str:
         try:

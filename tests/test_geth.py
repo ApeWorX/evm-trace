@@ -2,6 +2,7 @@ import re
 
 import pytest
 from eth_pydantic_types import HexBytes
+from eth_utils import to_checksum_address
 from pydantic import ValidationError
 
 from evm_trace.enums import CallType
@@ -92,6 +93,84 @@ def test_get_calltree_from_geth_trace_when_given_list(trace_frame_data):
 
     # Tests against a bug where we could not set the return data.
     assert actual.returndata == returndata
+
+
+def test_get_calltree_from_geth_trace_handles_events(geth_structlogs):
+    frames = [TraceFrame.model_validate(f) for f in geth_structlogs]
+    actual = get_calltree_from_geth_trace(frames)
+    contract_a = "e7f1725e7734ce288f8367e1bb143e90bb3f0512"
+    contract_a_checksum = to_checksum_address(contract_a)
+    expected_selector_0 = "0x7289bf584c70dbd1e1a9f47d4d86498048378245f23434470bbda959f708d0ff"
+    expected_selector_1 = "0x61fb72029c258791b830903dd8de307390e49a1673acb59083b1d0e26ce73e33"
+    expected_selector_2 = "0x5fc4e95e3c9b74ccfcc1edd97348437b79c0596201a3d5b11ffa63c3fb80cd69"
+    expected_repr = f"""
+CALL
+├── CALL: {contract_a_checksum}.<0x045856de>
+├── CALL: {contract_a_checksum}.<0xbeed0f85>
+│   ├── STATICCALL: 0x5FbDB2315678afecb367f032d93F642f64180aa3.<0x7007cbe8>
+│   └── CALL: 0x5FbDB2315678afecb367f032d93F642f64180aa3.<0x878fb701>
+│       ├── EVENT: {expected_selector_0}
+│       ├── EVENT: {expected_selector_1}
+│       └── EVENT: {expected_selector_2}
+├── CALL: {contract_a_checksum}.<0xb27b8804>
+├── CALL: {contract_a_checksum}.<0xb9e5b20a>
+│   ├── STATICCALL: 0x5FbDB2315678afecb367f032d93F642f64180aa3.<0xe5e1d93f>
+│   ├── CALL: 0x5FbDB2315678afecb367f032d93F642f64180aa3.<0x878fb701>
+│   │   ├── EVENT: {expected_selector_0}
+│   │   ├── EVENT: {expected_selector_1}
+│   │   └── EVENT: {expected_selector_2}
+│   ├── CALL: 0x5FbDB2315678afecb367f032d93F642f64180aa3.<0x90bb7141>
+│   └── CALL: 0x5FbDB2315678afecb367f032d93F642f64180aa3.<0x90bb7141>
+├── STATICCALL: 0x5FbDB2315678afecb367f032d93F642f64180aa3.<0xbff2e095>
+├── STATICCALL: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512.<0x9155fd57>
+├── CALL: {contract_a_checksum}.<0xbeed0f85>
+│   ├── STATICCALL: 0x5FbDB2315678afecb367f032d93F642f64180aa3.<0x7007cbe8>
+│   └── CALL: 0x5FbDB2315678afecb367f032d93F642f64180aa3.<0x878fb701>
+│       ├── EVENT: {expected_selector_0}
+│       ├── EVENT: {expected_selector_1}
+│       └── EVENT: {expected_selector_2}
+└── CALL: {contract_a_checksum}.<0xbeed0f85>
+    ├── STATICCALL: 0x5FbDB2315678afecb367f032d93F642f64180aa3.<0x7007cbe8>
+    └── CALL: 0x5FbDB2315678afecb367f032d93F642f64180aa3.<0x878fb701>
+        ├── EVENT: {expected_selector_0}
+        ├── EVENT: {expected_selector_1}
+        └── EVENT: {expected_selector_2}
+""".strip()
+    actual_repr = repr(actual)
+    assert actual_repr == expected_repr
+
+    # Assertions related to direct event data.
+    actual_events = actual.calls[-1].calls[-1].events
+    assert len(actual_events) == 3
+
+    # Assert `.selector` is correct.
+    assert actual_events[0].selector == HexBytes(expected_selector_0)
+    assert actual_events[1].selector == HexBytes(expected_selector_1)
+    assert actual_events[2].selector == HexBytes(expected_selector_2)
+
+    # Assert `.topics` is correct.
+    assert actual_events[0].topics == [
+        HexBytes(f"0x000000000000000000000000{contract_a}"),
+        HexBytes("0x0000000000000000000000000000000000000000000000000000000000000001"),
+    ]
+    assert actual_events[1].topics == [HexBytes(f"0x000000000000000000000000{contract_a}")]
+    assert actual_events[2].topics == [
+        HexBytes("0x0000000000000000000000000000000000000000000000000000000000000005"),
+        HexBytes("0x0000000000000000000000000000000000000000000000000000000000000006"),
+        HexBytes("0x0000000000000000000000000000000000000000000000000000000000000007"),
+    ]
+
+    # Assert `.data` is correct.
+    assert actual_events[0].data == [
+        HexBytes("0x0000000000000000000000000000000000000000000000000000000000000002"),
+        HexBytes("0x0000000000000000000000000000000000000000000000000000000000000003"),
+    ]
+    assert actual_events[1].data == [HexBytes(f"0x000000000000000000000000{contract_a}")]
+    assert actual_events[2].data == [
+        HexBytes("0x0000000000000000000000000000000000000000000000000000000000000008"),
+        HexBytes("0x0000000000000000000000000000000000000000000000000000000000000009"),
+        HexBytes("0x000000000000000000000000000000000000000000000000000000000000000a"),
+    ]
 
 
 def test_get_calltree_from_geth_call_trace(call_trace_data):
