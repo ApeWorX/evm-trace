@@ -3,7 +3,7 @@ from typing import Optional
 
 from eth_pydantic_types import HexBytes
 from pydantic import BaseModel as _BaseModel
-from pydantic import ConfigDict, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
 from evm_trace.display import get_tree_display
 from evm_trace.enums import CallType
@@ -14,6 +14,31 @@ class BaseModel(_BaseModel):
         ignored_types=(cached_property, singledispatchmethod),
         arbitrary_types_allowed=True,
     )
+
+
+class EventNode(BaseModel):
+    """
+    An event emitted during a CALL.
+    """
+
+    call_type: CallType = CallType.EVENT
+    """The call-type for events is always ``EVENT``."""
+
+    data: HexBytes = HexBytes(b"")
+    """The remaining event data besides the topics."""
+
+    depth: int
+    """The depth in a call-tree where the event took place."""
+
+    topics: list[HexBytes] = Field(min_length=1)
+    """Event topics, including the selector."""
+
+    @property
+    def selector(self) -> HexBytes:
+        """
+        The selector is always the first topic.
+        """
+        return self.topics[0]
 
 
 class CallTreeNode(BaseModel):
@@ -58,6 +83,9 @@ class CallTreeNode(BaseModel):
 
     failed: bool = False
     """Whether the call failed or not."""
+
+    events: list[EventNode] = []
+    """All events made in the call."""
 
     def __str__(self) -> str:
         try:

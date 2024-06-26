@@ -6,7 +6,7 @@ from eth_pydantic_types import HashBytes20, HexBytes
 from eth_utils import to_int
 from pydantic import Field, RootModel, field_validator
 
-from evm_trace.base import BaseModel, CallTreeNode
+from evm_trace.base import BaseModel, CallTreeNode, EventNode
 from evm_trace.enums import CALL_OPCODES, CallType
 
 
@@ -78,7 +78,7 @@ def create_trace_frames(data: Iterator[dict]) -> Iterator[TraceFrame]:
     looking ahead and finding it.
 
     Args:
-        data (Iterator[Dict]): An iterator of response struct logs.
+        data (Iterator[dict]): An iterator of response struct logs.
 
     Returns:
         Iterator[:class:`~evm_trace.geth.TraceFrame`]
@@ -132,7 +132,7 @@ def get_calltree_from_geth_call_trace(data: dict) -> CallTreeNode:
     Creates a CallTreeNode from a given transaction call trace.
 
     Args:
-        data (Dict): The response from ``debug_traceTransaction`` when using
+        data (dict): The response from ``debug_traceTransaction`` when using
           ``tracer=callTracer``.
 
     Returns:
@@ -216,7 +216,7 @@ def extract_memory(offset: HexBytes, size: HexBytes, memory: list[HexBytes]) -> 
     Args:
         offset (HexBytes): Offset byte location in memory.
         size (HexBytes): Number of bytes to return.
-        memory (List[HexBytes]): Memory stack.
+        memory (list[HexBytes]): Memory stack.
 
     Returns:
         HexBytes: Byte value from memory stack.
@@ -252,7 +252,6 @@ def _create_node(
     Use specified opcodes to create a branching callnode
     https://www.evm.codes/
     """
-
     if isinstance(trace, list):
         # NOTE: We don't officially support lists here,
         # but if we don't do this, the user gets a recursion error
@@ -298,6 +297,13 @@ def _create_node(
             else:
                 node_kwargs["calls"] = [subcall]
 
+        elif frame.op.startswith("LOG") and len(frame.op) > 3 and frame.op[3].isnumeric():
+            event = _create_event_node(frame)
+            if "events" in node_kwargs:
+                node_kwargs["events"].append(event)
+            else:
+                node_kwargs["events"] = [event]
+
         # TODO: Handle internal nodes using JUMP and JUMPI
 
         elif frame.op == CallType.SELFDESTRUCT.value:
@@ -324,14 +330,37 @@ def _create_node(
     if "last_create_depth" in node_kwargs:
         del node_kwargs["last_create_depth"]
 
+    if "callType" in node_kwargs:
+        node_kwargs["call_type"] = node_kwargs.pop("callType")
+    elif "call_type" not in node_kwargs:
+        node_kwargs["call_type"] = CallType.CALL  # Default.
+
     if node_kwargs["call_type"] in (CallType.CREATE, CallType.CREATE2) and not node_kwargs.get(
         "address"
     ):
         # Set temporary address so validation succeeds.
         node_kwargs["address"] = 20 * b"\x00"
 
-    node = CallTreeNode(**node_kwargs)
-    return node
+    return CallTreeNode(**node_kwargs)
+
+
+def _create_event_node(frame: TraceFrame) -> EventNode:
+    # The number of topics is derived from the opcode,
+    # e.g. LOG2 meaning 2 topics (not counting the selector).
+    num_topics = int(frame.op[3])
+
+    # The selector always seems to be here.
+    selector_idx = -3
+    selector = frame.stack[-3]
+
+    # Figure out topics.
+    start_topic_idx = selector_idx - num_topics + 1
+    topics = [selector, *[HexBytes(t) for t in reversed(frame.stack[start_topic_idx:selector_idx])]]
+
+    # Figure out data.
+    data = frame.memory.get(frame.stack[-1], frame.stack[-2])
+
+    return EventNode(data=data, depth=frame.depth, topics=topics)
 
 
 def _validate_data_from_call_tracer(data: dict) -> dict:
