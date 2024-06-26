@@ -24,7 +24,7 @@ class EventNode(BaseModel):
     call_type: CallType = CallType.EVENT
     """The call-type for events is always ``EVENT``."""
 
-    data: HexBytes = []
+    data: HexBytes = HexBytes(b"")
     """The remaining event data besides the topics."""
 
     depth: int
