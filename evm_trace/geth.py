@@ -358,12 +358,7 @@ def _create_event_node(frame: TraceFrame) -> EventNode:
     topics = [selector, *[HexBytes(t) for t in reversed(frame.stack[start_topic_idx:selector_idx])]]
 
     # Figure out data.
-    num_data_items = int(frame.stack[-2].hex(), 16) // 32
-    data_key_idx = selector_idx - num_topics
-    data_key = frame.stack[data_key_idx]
-    data_idx = frame.memory.root.index(data_key) + 1
-    end_data_idx = data_idx + num_data_items
-    data = frame.memory.root[data_idx:end_data_idx]
+    data = frame.memory.get(frame.stack[-1], frame.stack[-2])
 
     return EventNode(data=data, depth=frame.depth, topics=topics)
 
