@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from typing import Optional
 
 from eth_pydantic_types import HashBytes20, HexBytes
-from eth_utils import to_int
+from eth_utils import to_hex, to_int
 from pydantic import Field, RootModel, field_validator
 
 from evm_trace.base import BaseModel, CallTreeNode, EventNode
@@ -188,7 +188,7 @@ def create_call_node_data(frame: TraceFrame) -> dict:
     data: dict = {"address": frame.address, "depth": frame.depth}
     if frame.op == CallType.CALL.value:
         data["call_type"] = CallType.CALL
-        data["value"] = int(frame.stack[-3].hex(), 16)
+        data["value"] = int(to_hex(frame.stack[-3]), 16)
         data["calldata"] = frame.memory.get(frame.stack[-4], frame.stack[-5])
     elif frame.op == CallType.DELEGATECALL.value:
         data["call_type"] = CallType.DELEGATECALL
@@ -197,10 +197,10 @@ def create_call_node_data(frame: TraceFrame) -> dict:
     # `calldata` and `address` are handle in later frames for CREATE and CREATE2.
     elif frame.op == CallType.CREATE.value:
         data["call_type"] = CallType.CREATE
-        data["value"] = int(frame.stack[-1].hex(), 16)
+        data["value"] = int(to_hex(frame.stack[-1]), 16)
     elif frame.op == CallType.CREATE2.value:
         data["call_type"] = CallType.CREATE2
-        data["value"] = int(frame.stack[-1].hex(), 16)
+        data["value"] = int(to_hex(frame.stack[-1]), 16)
 
     else:
         data["call_type"] = CallType.STATICCALL
