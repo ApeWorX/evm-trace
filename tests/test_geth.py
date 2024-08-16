@@ -2,7 +2,7 @@ import re
 
 import pytest
 from eth_pydantic_types import HexBytes
-from eth_utils import to_checksum_address
+from eth_utils import to_checksum_address, to_hex
 from pydantic import ValidationError
 
 from evm_trace.enums import CallType
@@ -240,7 +240,7 @@ def test_create_trace_frames_from_geth_create2_struct_logs(
     for frame in frames:
         if frame.op.startswith("CREATE"):
             assert frame.address
-            address = frame.address.hex()
+            address = to_hex(frame.address)
             assert address.startswith("0x")
             assert len(address) == 42
             create2_found = create2_found or frame.op == "CREATE2"

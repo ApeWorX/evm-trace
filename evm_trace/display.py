@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Optional, Union, cast
 
 from eth_typing import ChecksumAddress
-from eth_utils import to_checksum_address
+from eth_utils import to_checksum_address, to_hex
 
 from evm_trace.enums import CallType
 
@@ -56,11 +56,11 @@ class TreeRepresentation:
 
         if hasattr(self.call, "selector"):
             # Is an Event-node
-            selector = self.call.selector.hex() if self.call.selector else None
+            selector = to_hex(self.call.selector) if self.call.selector else None
             return f"{call_type}: {selector}"
         # else: Is a CallTreeNode
 
-        address_hex_str = self.call.address.hex() if self.call.address else None
+        address_hex_str = to_hex(self.call.address) if self.call.address else None
         try:
             address = to_checksum_address(address_hex_str) if address_hex_str else None
         except (ImportError, ValueError):
@@ -80,7 +80,7 @@ class TreeRepresentation:
                 method_id = ""
 
             else:
-                hex_id = self.call.calldata[:4].hex()
+                hex_id = to_hex(self.call.calldata[:4])
                 method_id = f"<{hex_id}>" if hex_id else ""
 
             sep = "." if call_path and method_id else ""
