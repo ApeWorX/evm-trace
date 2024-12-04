@@ -123,7 +123,7 @@ if sys.version_info < (3, 13):
             if op.ex and op.ex.mem:
                 memory.extend(op.ex.mem.off, len(op.ex.mem.data))
 
-            # geth convention is to return after memory expansion, but before the operation is applied
+            # geth convention is to return after memory expansion, but before operation is applied
             yield VMTraceFrame(
                 address=address,
                 pc=op.pc,
@@ -176,7 +176,7 @@ if sys.version_info < (3, 13):
 
     def from_rpc_response(buffer: bytes) -> VMTrace | list[VMTrace]:
         """
-        Decode structured data from a raw `trace_replayTransaction` or `trace_replayBlockTransactions`.
+        Decode structured data from raw `trace_replayTransaction` or `trace_replayBlockTransactions`
         """
         response = Decoder(RPCResponse, dec_hook=dec_hook).decode(buffer)
         result: list[RPCTraceResult] | RPCTraceResult = response.result
