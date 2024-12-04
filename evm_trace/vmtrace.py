@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import sys
 
 if sys.version_info < (3, 13):
-    from __future__ import annotations
 
     from collections.abc import Iterator
     from typing import Any
@@ -176,7 +177,8 @@ if sys.version_info < (3, 13):
 
     def from_rpc_response(buffer: bytes) -> VMTrace | list[VMTrace]:
         """
-        Decode structured data from raw `trace_replayTransaction` or `trace_replayBlockTransactions`
+        Decode structured data from a raw `trace_replayTransaction` or
+        `trace_replayBlockTransactions`.
         """
         response = Decoder(RPCResponse, dec_hook=dec_hook).decode(buffer)
         result: list[RPCTraceResult] | RPCTraceResult = response.result

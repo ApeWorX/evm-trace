@@ -23,7 +23,7 @@ extras_require = {
         "mdformat-pyproject>=0.0.1",  # Allows configuring in pyproject.toml
     ],
     "release": [  # `release` GitHub Action job uses this
-        "setuptools",  # Installation tool
+        "setuptools>=75.6.0",  # Installation tool
         "wheel",  # Packaging tool
         "twine",  # Package upload tool
     ],
