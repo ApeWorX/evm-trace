@@ -63,7 +63,7 @@ setup(
         "pydantic>=2.5.2,<3",
         "py-evm>=0.10.1b1,<0.11",
         "eth-utils>=2.3.1,<6",
-        "msgspec>=0.8",
+        "msgspec>=0.8; python_version < '3.13'",
         "eth-pydantic-types>=0.1.3,<0.2",
     ],
     python_requires=">=3.9,<4",
@@ -86,5 +86,6 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
 )
