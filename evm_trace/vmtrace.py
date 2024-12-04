@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import Any
+from typing import Optional, Union
 
 from eth.vm.memory import Memory
 from eth.vm.stack import Stack
 from eth_pydantic_types import Address, HexBytes
 from eth_utils import to_int
-from msgspec import Struct
-from msgspec.json import Decoder
+from pydantic import BaseModel
 
 # opcodes grouped by the number of items they pop from the stack
 # fmt: off
@@ -31,14 +30,14 @@ class uint256(int):
     pass
 
 
-class VMTrace(Struct):
+class VMTrace(BaseModel):
     code: HexBytes
     """The code to be executed."""
     ops: list[VMOperation]
     """The operations executed."""
 
 
-class VMOperation(Struct):
+class VMOperation(BaseModel):
     pc: int
     """The program counter."""
     cost: int
@@ -53,7 +52,7 @@ class VMOperation(Struct):
     """Index in the tree."""
 
 
-class VMExecutedOperation(Struct):
+class VMExecutedOperation(BaseModel):
     used: int
     """The amount of remaining gas."""
     push: list[HexBytes]
@@ -64,21 +63,24 @@ class VMExecutedOperation(Struct):
     """The altered storage value, if any."""
 
 
-class MemoryDiff(Struct):
+class MemoryDiff(BaseModel):
     off: int
     """Offset into memory the change begins."""
     data: HexBytes
     """The changed data."""
 
 
-class StorageDiff(Struct):
+class StorageDiff(BaseModel):
     key: uint256
     """Which key in storage is changed."""
     val: uint256
     """What the value has been changed to."""
 
+    class Config:
+        arbitrary_types_allowed = True
 
-class VMTraceFrame(Struct):
+
+class VMTraceFrame(BaseModel):
     """
     A synthetic trace frame representing the state at a step of execution.
     """
@@ -90,6 +92,9 @@ class VMTraceFrame(Struct):
     stack: list[int]
     memory: bytes | memoryview
     storage: dict[int, int]
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 def to_trace_frames(
@@ -166,27 +171,20 @@ def to_trace_frames(
             )
 
 
-class RPCResponse(Struct):
-    result: RPCTraceResult | list[RPCTraceResult]
+class RPCResponse(BaseModel):
+    result: Union[RPCTraceResult, list[RPCTraceResult]]
 
 
-class RPCTraceResult(Struct):
+class RPCTraceResult(BaseModel):
     trace: list | None
-    vmTrace: VMTrace
+    vmTrace: Optional[VMTrace]
     stateDiff: dict | None
-
-
-def dec_hook(type: type, obj: Any) -> Any:
-    if type is uint256:
-        return uint256(obj, 16)
-    elif type is HexBytes:
-        return HexBytes(obj)
 
 
 def from_rpc_response(buffer: bytes) -> VMTrace | list[VMTrace]:
     """
     Decode structured data from a raw `trace_replayTransaction` or `trace_replayBlockTransactions`.
     """
-    response = Decoder(RPCResponse, dec_hook=dec_hook).decode(buffer)
+    response = RPCResponse.model_validate_json(buffer)
     result: list[RPCTraceResult] | RPCTraceResult = response.result
     return [i.vmTrace for i in result] if isinstance(result, list) else result.vmTrace
