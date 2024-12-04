@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 
+# msgspec does not currently build on python 3.13 so hide it behind a version check
 if sys.version_info < (3, 13):
 
     from collections.abc import Iterator
