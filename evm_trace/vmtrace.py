@@ -29,17 +29,14 @@ if sys.version_info < (3, 13):
     POPCODES.update({f"SWAP{i}": i + 1 for i in range(1, 17)})
     POPCODES.update({f"DUP{i}": i for i in range(1, 17)})
 
-
     class uint256(int):
         pass
-
 
     class VMTrace(Struct):
         code: HexBytes
         """The code to be executed."""
         ops: list[VMOperation]
         """The operations executed."""
-
 
     class VMOperation(Struct):
         pc: int
@@ -55,7 +52,6 @@ if sys.version_info < (3, 13):
         idx: str
         """Index in the tree."""
 
-
     class VMExecutedOperation(Struct):
         used: int
         """The amount of remaining gas."""
@@ -66,20 +62,17 @@ if sys.version_info < (3, 13):
         store: StorageDiff | None
         """The altered storage value, if any."""
 
-
     class MemoryDiff(Struct):
         off: int
         """Offset into memory the change begins."""
         data: HexBytes
         """The changed data."""
 
-
     class StorageDiff(Struct):
         key: uint256
         """Which key in storage is changed."""
         val: uint256
         """What the value has been changed to."""
-
 
     class VMTraceFrame(Struct):
         """
@@ -93,7 +86,6 @@ if sys.version_info < (3, 13):
         stack: list[int]
         memory: bytes | memoryview
         storage: dict[int, int]
-
 
     def to_trace_frames(
         trace: VMTrace,
@@ -168,23 +160,19 @@ if sys.version_info < (3, 13):
                     op.sub, depth=depth + 1, address=call_address, copy_memory=copy_memory
                 )
 
-
     class RPCResponse(Struct):
         result: RPCTraceResult | list[RPCTraceResult]
-
 
     class RPCTraceResult(Struct):
         trace: list | None
         vmTrace: VMTrace
         stateDiff: dict | None
 
-
     def dec_hook(type: type, obj: Any) -> Any:
         if type is uint256:
             return uint256(obj, 16)
         elif type is HexBytes:
             return HexBytes(obj)
-
 
     def from_rpc_response(buffer: bytes) -> VMTrace | list[VMTrace]:
         """
