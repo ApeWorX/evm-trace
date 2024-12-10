@@ -19,6 +19,7 @@ repos:
     rev: 7.1.1
     hooks:
     -   id: flake8
+        additional_dependencies: [flake8-breakpoint, flake8-print, flake8-pydantic, flake8-type-checking]
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.13.0
@@ -30,7 +31,7 @@ repos:
     rev: 0.7.19
     hooks:
     -   id: mdformat
-        additional_dependencies: [mdformat-gfm, mdformat-frontmatter]
+        additional_dependencies: [mdformat-gfm, mdformat-frontmatter, mdformat-pyproject]
 
 default_language_version:
     python: python3
