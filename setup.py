@@ -65,6 +65,7 @@ setup(
         "eth-utils>=2.3.1,<6",
         "msgspec>=0.8; python_version < '3.13'",
         "eth-pydantic-types>=0.1.3,<0.2",
+        "cchecksum>=0.0.3,<1",
     ],
     python_requires=">=3.9,<4",
     extras_require=extras_require,
