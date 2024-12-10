@@ -1,8 +1,9 @@
 import re
 
 import pytest
+from cchecksum import to_checksum_address
 from eth_pydantic_types import HexBytes
-from eth_utils import to_checksum_address, to_hex
+from eth_utils import to_hex
 from pydantic import ValidationError
 
 from evm_trace.enums import CallType

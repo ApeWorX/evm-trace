@@ -1,14 +1,15 @@
 import copy
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
-from evm_trace.base import CallTreeNode
+if TYPE_CHECKING:
+    from evm_trace.base import CallTreeNode
 
 ContractID = TypeVar("ContractID")
 MethodID = TypeVar("MethodID")
 GasReport = dict[ContractID, dict[MethodID, list[int]]]
 
 
-def get_gas_report(calltree: CallTreeNode) -> GasReport:
+def get_gas_report(calltree: "CallTreeNode") -> GasReport:
     """
     Extracts a gas report object from a :class:`~evm_trace.base.CallTreeNode`.
 
