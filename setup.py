@@ -10,17 +10,19 @@ extras_require = {
         "eth-hash[pysha3]",  # For eth-utils address checksumming
     ],
     "lint": [
-        "black>=24.8.0,<25",  # Auto-formatter and linter
-        "mypy>=1.11.1,<2",  # Static type analyzer
+        "black>=24.10.0,<25",  # Auto-formatter and linter
+        "mypy>=1.13.0,<2",  # Static type analyzer
         "types-setuptools",  # Needed for mypy type shed
         "flake8>=7.1.1,<8",  # Style linter
         "flake8-breakpoint>=1.1.0,<2",  # Detect breakpoints left in code
-        "flake8-print>=5.0.0,<6",  # Detect print statements left in code
+        "flake8-print>=4.0.1,<5",  # Detect print statements left in code
+        "flake8-pydantic",  # For detecting issues with Pydantic models
+        "flake8-type-checking",  # Detect imports to move in/out of type-checking blocks
         "isort>=5.10.1,<6",  # Import sorting linter
-        "mdformat>=0.7.17",  # Auto-formatter for markdown
+        "mdformat>=0.7.19",  # Auto-formatter for markdown
         "mdformat-gfm>=0.3.5",  # Needed for formatting GitHub-flavored markdown
         "mdformat-frontmatter>=0.4.1",  # Needed for frontmatters-style headers in issue templates
-        "mdformat-pyproject>=0.0.1",  # Allows configuring in pyproject.toml
+        "mdformat-pyproject>=0.0.2",  # Allows configuring in pyproject.toml
     ],
     "release": [  # `release` GitHub Action job uses this
         "setuptools>=75.6.0",  # Installation tool
@@ -60,12 +62,12 @@ setup(
     url="https://github.com/ApeWorX/evm-trace",
     include_package_data=True,
     install_requires=[
-        "pydantic>=2.5.2,<3",
-        "py-evm>=0.10.1b1,<0.11",
+        "cchecksum>=0.0.3,<1",
+        "eth-pydantic-types>=0.1.3,<0.2",
         "eth-utils>=2.3.1,<6",
         "msgspec>=0.8; python_version < '3.13'",
-        "eth-pydantic-types>=0.1.3,<0.2",
-        "cchecksum>=0.0.3,<1",
+        "pydantic>=2.5.2,<3",
+        "py-evm>=0.10.1b1,<0.11",
     ],
     python_requires=">=3.9,<4",
     extras_require=extras_require,
