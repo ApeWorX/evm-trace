@@ -65,7 +65,7 @@ setup(
         "cchecksum>=0.0.3,<1",
         "eth-pydantic-types>=0.1.3,<0.2",
         "eth-utils>=2.3.1,<6",
-        "msgspec>=0.8; python_version < '3.13'",
+        "msgspec>=0.8",
         "pydantic>=2.5.2,<3",
         "py-evm>=0.10.1b1,<0.11",
     ],
