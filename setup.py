@@ -67,7 +67,7 @@ setup(
         "eth-utils>=2.3.1,<6",
         "msgspec>=0.8",
         "pydantic>=2.5.2,<3",
-        "py-evm>=0.10.1b1,<0.11",
+        "py-evm>=0.10.1b1,<0.13",
     ],
     python_requires=">=3.9,<4",
     extras_require=extras_require,
