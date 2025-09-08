@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from typing import Optional
 
 from eth_pydantic_types import HexBytes, HexBytes20
-from eth_utils import to_hex, to_int
+from faster_eth_utils import to_hex, to_int
 from pydantic import Field, RootModel, field_validator
 
 from evm_trace.base import BaseModel, CallTreeNode, EventNode
