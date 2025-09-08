@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional, Union, cast
 
 from cchecksum import to_checksum_address
 from eth_typing import ChecksumAddress
-from eth_utils import to_hex
+from faster_eth_utils import to_hex
 
 from evm_trace.enums import CallType
 
