@@ -6,7 +6,7 @@ from typing import Any
 from eth.vm.memory import Memory
 from eth.vm.stack import Stack
 from eth_pydantic_types import Address, HexBytes
-from eth_utils import to_int
+from faster_eth_utils import to_int
 from msgspec import Struct
 from msgspec.json import Decoder
 
