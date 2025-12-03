@@ -1,28 +1,14 @@
-name: PR Title
+on: push
 
-on:
-  pull_request_target:
-    types:
-      - opened
-      - edited
-      - synchronize
+name: Commit Message
 
+# NOTE: Skip check on PR so as not to confuse contributors
+# NOTE: Also install a PR title checker so we don't mess up merges
 jobs:
-    check:
-        runs-on: ubuntu-latest
-
-        steps:
-        - uses: actions/checkout@v4
-
-        - name: Setup Python
-          uses: actions/setup-python@v5
-          with:
-              python-version: "3.10"
-
-        - name: Install Dependencies
-          run: pip install commitizen
-
-        - name: Check PR Title
-          env:
-              TITLE: ${{ github.event.pull_request.title }}
-          run: cz check --message "$TITLE"
+  commit-msg:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Conventional Commitlint
+        uses: opensource-nepal/commitlint@v1

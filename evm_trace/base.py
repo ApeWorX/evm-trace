@@ -1,5 +1,4 @@
 from functools import cached_property, singledispatchmethod
-from typing import Optional
 
 from eth_pydantic_types import HexBytes
 from pydantic import BaseModel as _BaseModel
@@ -61,12 +60,12 @@ class CallTreeNode(BaseModel):
     The number of external jumps away the initially called contract (starts at 0).
     """
 
-    gas_limit: Optional[int] = None
+    gas_limit: int | None = None
     """
     The total amount of gas available.
     """
 
-    gas_cost: Optional[int] = None  # calculated from call starting and return
+    gas_cost: int | None = None  # calculated from call starting and return
     """The cost to execute this opcode."""
 
     calldata: HexBytes = HexBytes("")
