@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from pydantic import Field, RootModel, field_validator
 
@@ -12,8 +12,8 @@ class CallAction(BaseModel):
     The amount of gas available for the action.
     """
 
-    input: Optional[str] = None
-    receiver: Optional[str] = Field(alias="to", default=None)
+    input: str | None = None
+    receiver: str | None = Field(alias="to", default=None)
     sender: str = Field(alias="from")
     value: int
     # only used to recover the specific call type
@@ -82,16 +82,16 @@ class CreateResult(ActionResult):
     code: str
 
 
-ParityTraceAction = Union[CreateAction, CallAction, SelfDestructAction]
-ParityTraceResult = Union[CallResult, CreateResult]
+ParityTraceAction = CreateAction | CallAction | SelfDestructAction
+ParityTraceResult = CallResult | CreateResult
 
 
 class ParityTrace(BaseModel):
-    error: Optional[str] = None
+    error: str | None = None
     action: ParityTraceAction
     block_hash: str = Field(alias="blockHash")
     call_type: CallType = Field(alias="type")
-    result: Optional[ParityTraceResult] = None
+    result: ParityTraceResult | None = None
     subtraces: int
     trace_address: list[int] = Field(alias="traceAddress")
     transaction_hash: str = Field(alias="transactionHash")
@@ -113,7 +113,7 @@ ParityTraceList = RootModel[list[ParityTrace]]
 
 def get_calltree_from_parity_trace(
     traces: ParityTraceList,
-    root: Optional[ParityTrace] = None,
+    root: ParityTrace | None = None,
     **root_kwargs,
 ) -> CallTreeNode:
     """
@@ -140,7 +140,7 @@ def get_calltree_from_parity_trace(
 
     if root.call_type == CallType.CREATE:
         create_action: CreateAction = cast(CreateAction, root.action)
-        create_result: Optional[CreateResult] = (
+        create_result: CreateResult | None = (
             cast(CreateResult, root.result) if root.result is not None else None
         )
         node_kwargs.update(
@@ -158,7 +158,7 @@ def get_calltree_from_parity_trace(
         CallType.CALLCODE,
     ):
         call_action: CallAction = cast(CallAction, root.action)
-        call_result: Optional[CallResult] = (
+        call_result: CallResult | None = (
             cast(CallResult, root.result) if root.result is not None else None
         )
 

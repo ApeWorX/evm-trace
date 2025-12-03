@@ -1,6 +1,5 @@
 import math
 from collections.abc import Iterator
-from typing import Optional
 
 from eth_pydantic_types import HexBytes, HexBytes20
 from eth_utils import to_hex, to_int
@@ -49,7 +48,7 @@ class TraceFrame(BaseModel):
     storage: dict[HexBytes, HexBytes] = {}
     """Contract storage."""
 
-    contract_address: Optional[HexBytes20] = None
+    contract_address: HexBytes20 | None = None
     """The address producing the frame."""
 
     @field_validator("pc", "gas", "gas_cost", "depth", mode="before")
@@ -57,7 +56,7 @@ class TraceFrame(BaseModel):
         return int(value, 16) if isinstance(value, str) else value
 
     @property
-    def address(self) -> Optional[HexBytes20]:
+    def address(self) -> HexBytes20 | None:
         """
         The address of this CALL frame.
         Only returns a value if this frame's opcode is a call-based opcode.
