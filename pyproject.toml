@@ -1,22 +1,77 @@
 [build-system]
 requires = ["setuptools>=75.6.0", "wheel", "setuptools_scm[toml]>=5.0"]
+build-backend = "setuptools.build_meta"
 
-[tool.mypy]
-exclude = "build/"
-plugins = ["pydantic.mypy"]
+[project]
+name = "evm-trace"
+dynamic = ["version"]
+description = "evm-trace: Ethereum Virtual Machine transaction tracing tool"
+readme = "README.md"
+authors = [
+    { name = "ApeWorX Ltd.", email = "admin@apeworx.io" },
+]
+license = "Apache-2.0"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+requires-python = ">=3.10,<4"
+dependencies = [
+    "cchecksum>=0.0.3,<1",
+    "eth-pydantic-types>=0.2.0,<0.3",
+    "eth-utils>=2.3.1,<6",
+    "msgspec>=0.8",
+    "pydantic>=2.5.2,<3",
+    "py-evm>=0.10.1b1,<0.13",
+]
+
+[project.urls]
+Repository = "https://github.com/ApeWorX/evm-trace"
+Issues = "https://github.com/ApeWorX/evm-trace/issues"
+
+[dependency-groups]
+test = [
+    "pytest>=6.0",
+    "pytest-xdist",
+    "pytest-cov",
+    "hypothesis>=6.2.0,<7.0",
+    "eth-hash[pysha3]",
+]
+lint = [
+    "ruff>=0.14,<1",  # Auto-formatter and linter
+    "types-setuptools",  # Needed for mypy type shed
+    "docutils-stubs",  # Needed for mypy type shed
+    "mypy>=1.16,<2",  # Static type analyzer
+    "mdformat>=0.7,<1",  # Auto-formatter for markdown
+    "mdformat-gfm>=0.3.5",  # Needed for formatting GitHub-flavored markdown
+    "mdformat-frontmatter>=0.4.1",  # Needed for frontmatters-style headers in issue templates
+    "mdformat-pyproject>=0.0.2",  # Allows configuring in pyproject.toml
+]
+dev = [
+    {include-group = "test"},
+    {include-group = "lint"},
+    "commitizen",
+    "pre-commit",
+    "pytest-watch",
+    "IPython",
+    "ipdb",
+]
 
 [tool.setuptools_scm]
 write_to = "evm_trace/version.py"
 
-# NOTE: you have to use single-quoted strings in TOML for regular expressions.
-# It's the equivalent of r-strings in Python.  Multiline strings are treated as
-# verbose regular expressions by Black.  Use [ ] to denote a significant space
-# character.
-
-[tool.black]
-line-length = 100
-target-version = ['py39', 'py310', 'py311', 'py312', 'py313']
-include = '\.pyi?$'
+[tool.mypy]
+exclude = "build/"
+plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
 addopts = """
@@ -31,13 +86,122 @@ python_files = "test_*.py"
 testpaths = "tests"
 markers = "fuzzing: Run Hypothesis fuzz test suite"
 
-[tool.isort]
-line_length = 100
-force_grid_wrap = 0
-include_trailing_comma = true
-multi_line_output = 3
-use_parentheses = true
-skip = ["version.py"]
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# See: https://docs.astral.sh/ruff/rules/
+select = [
+    # Core Python errors and style
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # isort
+    "B",    # flake8-bugbear - common bugs/design issues
+    "C4",   # flake8-comprehensions - simplify comprehensions
+    "UP",   # pyupgrade - modern Python features/idioms
+    "RET",  # flake8-return - cleaner return statements
+    "SIM",  # flake8-simplify - code simplification
+    "S",    # flake8-bandit - security issues
+    "TCH",  # flake8-type-checking - type annotation improvements
+    "T10",  # flake8-debugger - detect debugger calls/imports
+    "FIX",  # flake8-fixme - detect FIXME, TODO, XXX comments
+]
+
+# Rules to ignore
+ignore = [
+    "E501",
+
+    # Specific bugbear issues
+    "B904",     # Use 'raise from' in except blocks
+    "B006",     # Mutable default arguments
+    "B007",     # Loop control variable not used within loop body
+    "B012",     # Jump statements in finally blocks
+    "B028",     # No explicit stacklevel in warnings
+
+    # FIXME/TODO comments - these are intentional markers for future work
+    "FIX002",   # Line contains TODO
+    "FIX004",   # Line contains HACK
+
+    # Code structure preferences
+    "SIM102",   # Use a single if statement instead of nested if statements
+    "SIM105",   # Use contextlib.suppress instead of try-except-pass
+    "SIM108",   # Use ternary operator instead of if-else block
+    "SIM113",   # Use enumerate instead of manually incrementing counter
+    "SIM114",   # If branches with identical arm bodies (combine with or)
+    "SIM115",   # Use context manager for opening files
+    "SIM116",   # Use dictionary instead of if-statements
+    "SIM117",   # Multiple with statements
+    "B018",     # Useless expression
+
+    # Return statement style
+    "RET501",   # Do not explicitly return None
+    "RET502",   # Implicit return at the end of function able to return non-None value
+    "RET503",   # Missing explicit return at the end of function able to return non-None value
+    "RET504",   # Unnecessary assignment before return
+    "RET505",   # Unnecessary else after return
+    "RET506",   # Unnecessary else after raise
+    "RET507",   # Unnecessary else after continue
+    "RET508",   # Unnecessary else after break
+
+    # Security issues (allow common patterns in the codebase)
+    "S101",     # Use of assert (many asserts are used for type checking)
+    "S102",     # Use of exec (needed in some specific places)
+    "S105",     # Hardcoded password string
+    "S110",     # Try-except-pass (common pattern for handling optional features)
+    "S112",     # Try-except-continue
+    "S113",     # Request without timeout
+    "S202",     # Tarfile unsafe members
+    "S307",     # Use of eval
+    "S311",     # Suspicious non-cryptographic random usage
+    "S603",     # Subprocess without shell=True
+    "S607",     # Start process with partial path
+
+    # Style/readability issues (improve incrementally)
+    "C416",     # Unnecessary comprehension (rewrite using list/set/dict)
+    "C408",     # Unnecessary dict() call (rewrite as literal)
+    "C417",     # Unnecessary map usage (replace with generator)
+    "C414",     # Unnecessary list/dict call within another function
+    "C401",     # Unnecessary generator (rewrite as comprehension)
+    "C409",     # Unnecessary literal within tuple/list/dict call
+    "C419",     # Unnecessary comprehension in call
+    "SIM101",   # Duplicate isinstance call
+    "SIM103",   # Needless boolean conversion
+    "SIM110",   # Reimplemented builtin
+    "SIM118",   # Use 'key in dict' instead of 'key in dict.keys()'
+    "SIM401",   # Use dict.get instead of if-else block
+    "SIM910",   # Use dict.get(key) instead of dict.get(key, None)
+    "TC001",    # Move application import into type-checking block
+    "TC003",    # Move standard library import into type-checking block
+    "TC006",    # Add quotes to type expression in `typing.cast()`
+    "UP028",    # Replace yield over for loop with yield from
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/expected_traces.py" = ["E501"]
+"**/tests/**/*.py" = [
+    "D",        # Don't require docstrings in tests
+    "E501",     # Line length in tests is less critical
+    "S101",     # Allow assert in tests
+    "B011",     # Allow assert False in tests (common pattern)
+]
+"**/conftest.py" = [
+    "F401",     # Unused imports in conftest.py are often for fixtures
+    "F841",     # Allow unused variables in conftest (often for fixture side effects)
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["evm_trace"]
+
+[tool.ruff.format]
+quote-style = "double"
+line-ending = "auto"
+indent-style = "space"
+docstring-code-format = true
 
 [tool.mdformat]
 number = true
