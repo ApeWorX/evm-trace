@@ -142,7 +142,8 @@ def to_trace_frames(
         if op.op in ["CALL", "DELEGATECALL", "STATICCALL"]:
             call_address_from_stack = stack.values[-2]
             # Evm natively discards dirty upper bits during CALL
-            if len(call_address_from_stack) > 20:
+            # NOTE: `isinstance` check to satisfy mypy
+            if isinstance(call_address_from_stack, bytes) and len(call_address_from_stack) > 20:
                 call_address_from_stack = call_address_from_stack[-20:]
             call_address = Address.__eth_pydantic_validate__(call_address_from_stack)
 
