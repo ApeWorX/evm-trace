@@ -1,4 +1,3 @@
-import math
 from collections.abc import Iterator
 
 from eth_pydantic_types import HexBytes, HexBytes20
@@ -48,6 +47,12 @@ class TraceFrame(BaseModel):
     storage: dict[HexBytes, HexBytes] = {}
     """Contract storage."""
 
+    error: str | None = None
+    """Execution error reported on this instruction, if any."""
+
+    return_data: HexBytes | None = Field(alias="returnData", default=None)
+    """The return-data buffer, when the client was configured to include it."""
+
     contract_address: HexBytes20 | None = None
     """The address producing the frame."""
 
@@ -65,7 +70,9 @@ class TraceFrame(BaseModel):
         if not self.contract_address and (
             self.op in CALL_OPCODES and CallType.CREATE.value not in self.op
         ):
-            self.contract_address = HexBytes20.__eth_pydantic_validate__(self.stack[-2][-20:])
+            self.contract_address = HexBytes20.__eth_pydantic_validate__(
+                self.stack[-2][-20:].rjust(20, b"\x00")
+            )
 
         return self.contract_address
 
@@ -96,32 +103,25 @@ def create_trace_frames(data: Iterator[dict]) -> Iterator[TraceFrame]:
             yield from create_frames
 
         else:
-            yield TraceFrame(**frame)
+            yield frame_obj
 
 
 def _get_create_frames(frame: TraceFrame, frames: Iterator[dict]) -> list[TraceFrame]:
     create_frames = [frame]
-    start_depth = frame.depth
+    pending = [frame]
     for next_frame in frames:
         next_frame_obj = TraceFrame.model_validate(next_frame)
-        depth = next_frame_obj.depth
-
-        if CallType.CREATE.value in next_frame_obj.op:
-            # Handle CREATE within a CREATE.
-            create_frames.extend(_get_create_frames(next_frame_obj, frames))
-
-        elif depth <= start_depth:
-            # Extract the address for the original CREATE using
-            # the first frame after the CREATE with an equal depth.
-            if len(next_frame_obj.stack) > 0:
-                raw_addr = HexBytes(next_frame_obj.stack[-1][-40:])
-                frame.contract_address = HexBytes20.__eth_pydantic_validate__(raw_addr)
-
-            create_frames.append(next_frame_obj)
+        # Resolve the previous CREATE before handling a consecutive CREATE at the same depth.
+        while pending and next_frame_obj.depth <= pending[-1].depth:
+            previous = pending.pop()
+            if next_frame_obj.depth == previous.depth and next_frame_obj.stack:
+                raw_addr = next_frame_obj.stack[-1][-20:].rjust(20, b"\x00")
+                previous.contract_address = HexBytes20.__eth_pydantic_validate__(raw_addr)
+        create_frames.append(next_frame_obj)
+        if next_frame_obj.op in ("CREATE", "CREATE2"):
+            pending.append(next_frame_obj)
+        if not pending:
             break
-
-        elif depth > start_depth:
-            create_frames.append(next_frame_obj)
 
     return create_frames
 
@@ -185,21 +185,23 @@ def create_call_node_data(frame: TraceFrame) -> dict:
     """
 
     data: dict = {"address": frame.address, "depth": frame.depth}
-    if frame.op == CallType.CALL.value:
-        data["call_type"] = CallType.CALL
+    if frame.op in (CallType.CALL.value, CallType.CALLCODE.value):
+        data["call_type"] = CallType(frame.op)
         data["value"] = int(to_hex(frame.stack[-3]), 16)
         data["calldata"] = frame.memory.get(frame.stack[-4], frame.stack[-5])
     elif frame.op == CallType.DELEGATECALL.value:
         data["call_type"] = CallType.DELEGATECALL
         data["calldata"] = frame.memory.get(frame.stack[-3], frame.stack[-4])
 
-    # `calldata` and `address` are handle in later frames for CREATE and CREATE2.
+    # Initcode is in the CREATE frame; the new address is learned after returning.
     elif frame.op == CallType.CREATE.value:
         data["call_type"] = CallType.CREATE
         data["value"] = int(to_hex(frame.stack[-1]), 16)
+        data["calldata"] = frame.memory.get(frame.stack[-2], frame.stack[-3])
     elif frame.op == CallType.CREATE2.value:
         data["call_type"] = CallType.CREATE2
         data["value"] = int(to_hex(frame.stack[-1]), 16)
+        data["calldata"] = frame.memory.get(frame.stack[-2], frame.stack[-3])
 
     else:
         data["call_type"] = CallType.STATICCALL
@@ -229,132 +231,96 @@ def extract_memory(offset: HexBytes, size: HexBytes, memory: list[HexBytes]) -> 
     offset_int = to_int(offset)
 
     # Compute the word that contains the first byte
-    start_word = math.floor(offset_int / 32)
+    start_word = offset_int // 32
     # Compute the word that contains the last byte
-    stop_word = math.ceil((offset_int + size_int) / 32)
+    stop_word = (offset_int + size_int + 31) // 32
 
-    end_index = stop_word + 1
-    byte_slice = b"".join(memory[start_word:end_index])
+    byte_slice = b"".join(memory[start_word:stop_word])
     offset_index = offset_int % 32
 
-    # NOTE: Add 4 for the selector.
-
     end_bytes_index = offset_index + size_int
-    return_bytes = byte_slice[offset_index:end_bytes_index]
+    return_bytes = byte_slice[offset_index:end_bytes_index].ljust(size_int, b"\x00")
     return HexBytes(return_bytes)
 
 
-def _create_node(
-    trace: Iterator[TraceFrame], show_internal: bool = False, **node_kwargs
-) -> CallTreeNode:
-    """
-    Use specified opcodes to create a branching callnode
-    https://www.evm.codes/
-    """
-    if isinstance(trace, list):
-        # NOTE: We don't officially support lists here,
-        # but if we don't do this, the user gets a recursion error
-        # and it is confusing as to why.
-        trace = iter(trace)
+class _FrameIterator:
+    """A single shared lookahead keeps a no-code call from consuming its parent's frames."""
 
+    def __init__(self, frames: Iterator[TraceFrame]):
+        self.frames = iter(frames)
+        self.next_frame = next(self.frames, None)
+
+    def pop(self) -> TraceFrame:
+        frame = self.next_frame
+        assert frame is not None
+        self.next_frame = next(self.frames, None)
+        return frame
+
+
+def _create_node(
+    trace: Iterator[TraceFrame] | _FrameIterator, show_internal: bool = False, **node_kwargs
+) -> CallTreeNode:
     if show_internal:
         raise NotImplementedError()
 
-    # Store node details and do all validation at the end.
-    # This allow us to wild-hold required properties until they are known.
-    for frame in trace:
-        if (
-            node_kwargs.get("last_create_depth")
-            and frame.depth == node_kwargs["last_create_depth"][-1]
-        ):
-            # If we get here, we are in the process of completing the attributes from
-            # a CREATE or CREATE2 node. The data is located at the first frame with the same depth
-            # after the CREATE or CREATE2 opcode was found. This idea is copied from Brownie.
-            node_kwargs["last_create_depth"].pop()
-            for subcall in node_kwargs.get("calls", [])[::-1]:
-                if subcall.call_type in (CallType.CREATE, CallType.CREATE2):
-                    subcall.address = HexBytes20.__eth_pydantic_validate__(frame.stack[-1][-40:])
-                    if len(frame.stack) >= 5:
-                        subcall.calldata = frame.memory.get(frame.stack[-4], frame.stack[-5])
+    frames = trace if isinstance(trace, _FrameIterator) else _FrameIterator(trace)
+    node_kwargs.setdefault("call_type", node_kwargs.pop("callType", CallType.CALL))
+    node_kwargs.setdefault("depth", 0)
+    evm_depth = frames.next_frame.depth if frames.next_frame else 0
 
-                    break
+    while frames.next_frame is not None and frames.next_frame.depth == evm_depth:
+        frame = frames.pop()
+        if frame.error or frame.op == "INVALID" or frame.op.startswith("opcode 0x"):
+            node_kwargs["failed"] = True
+            break
 
-        if frame.op in [x.value for x in CALL_OPCODES]:
-            # NOTE: Because of the different meanings in structLog style gas values,
-            # gas is not set for nodes created this way.
+        if frame.op in CALL_OPCODES:
             data = create_call_node_data(frame)
-            if data.get("call_type") in (CallType.CREATE, CallType.CREATE2):
-                data["last_create_depth"] = [frame.depth]
-                if "last_create_depth" in node_kwargs:
-                    node_kwargs["last_create_depth"].append(frame.depth)
-                else:
-                    node_kwargs["last_create_depth"] = [frame.depth]
+            data["depth"] = node_kwargs["depth"] + 1
+            if frame.op == "DELEGATECALL":
+                data["value"] = node_kwargs.get("value", 0)
+            is_create = frame.op in ("CREATE", "CREATE2")
+            if is_create and data["address"] is None:
+                data["address"] = b""
+            entered = frames.next_frame is not None and frames.next_frame.depth > evm_depth
+            subcall = _create_node(frames, **data) if entered else CallTreeNode(**data)
 
-            subcall = _create_node(trace=trace, show_internal=show_internal, **data)
-            if "calls" in node_kwargs:
-                node_kwargs["calls"].append(subcall)
-            else:
-                node_kwargs["calls"] = [subcall]
+            resumed = frames.next_frame
+            if resumed is not None and resumed.depth == evm_depth and resumed.stack:
+                result = to_int(resumed.stack[-1])
+                subcall.failed = subcall.failed or result == 0
+                if is_create:
+                    subcall.address = (
+                        HexBytes(result.to_bytes(32, "big")[-20:]) if result else HexBytes(b"")
+                    )
+                elif not entered:
+                    # Memory only exposes a possibly truncated copy, not the output's length.
+                    if resumed.return_data is not None:
+                        subcall.returndata = resumed.return_data
+            node_kwargs.setdefault("calls", []).append(subcall)
 
-        elif frame.op.startswith("LOG") and len(frame.op) > 3 and frame.op[3].isnumeric():
-            event = _create_event_node(frame)
-            if "events" in node_kwargs:
-                node_kwargs["events"].append(event)
-            else:
-                node_kwargs["events"] = [event]
-
-        # TODO: Handle internal nodes using JUMP and JUMPI
-
-        elif frame.op == CallType.SELFDESTRUCT.value:
-            # TODO: Handle the internal value transfer
+        elif frame.op in ("LOG0", "LOG1", "LOG2", "LOG3", "LOG4"):
+            node_kwargs.setdefault("events", []).append(_create_event_node(frame))
+        elif frame.op == "SELFDESTRUCT":
             node_kwargs["selfdestruct"] = True
             break
-
         elif frame.op == "STOP":
-            # TODO: Handle "execution halted" vs. gas limit reached
             break
-
-        elif frame.op in ("RETURN", "REVERT") and not node_kwargs.get("returndata"):
-            node_kwargs["returndata"] = frame.memory.get(frame.stack[-1], frame.stack[-2])
-
-            # TODO: Handle "execution halted" vs. gas limit reached
-            node_kwargs["failed"] = frame.op == "REVERT"
+        elif frame.op in ("RETURN", "REVERT"):
+            if not node_kwargs.get("returndata"):
+                node_kwargs["returndata"] = frame.memory.get(frame.stack[-1], frame.stack[-2])
+            node_kwargs.setdefault("failed", frame.op == "REVERT")
             break
-
-        # TODO: Handle invalid opcodes (`node.failed = True`)
-        # NOTE: ignore other opcodes
-
-    # TODO: Handle "execution halted" vs. gas limit reached
-
-    if "last_create_depth" in node_kwargs:
-        del node_kwargs["last_create_depth"]
-
-    if "callType" in node_kwargs:
-        node_kwargs["call_type"] = node_kwargs.pop("callType")
-    elif "call_type" not in node_kwargs:
-        node_kwargs["call_type"] = CallType.CALL  # Default.
-
-    if node_kwargs["call_type"] in (CallType.CREATE, CallType.CREATE2) and not node_kwargs.get(
-        "address"
-    ):
-        # Set temporary address so validation succeeds.
-        node_kwargs["address"] = 20 * b"\x00"
 
     return CallTreeNode(**node_kwargs)
 
 
 def _create_event_node(frame: TraceFrame) -> EventNode:
     # The number of topics is derived from the opcode,
-    # e.g. LOG2 meaning 2 topics (not counting the selector).
+    # e.g. LOG2 means two topics, including the selector for non-anonymous events.
     num_topics = int(frame.op[3])
 
-    # The selector always seems to be here.
-    selector_idx = -3
-    selector = frame.stack[-3]
-
-    # Figure out topics.
-    start_topic_idx = selector_idx - num_topics + 1
-    topics = [selector, *[HexBytes(t) for t in reversed(frame.stack[start_topic_idx:selector_idx])]]
+    topics = [frame.stack[-3 - index].rjust(32, b"\x00") for index in range(num_topics)]
 
     # Figure out data.
     data = frame.memory.get(frame.stack[-1], frame.stack[-2])
@@ -363,6 +329,9 @@ def _create_event_node(frame: TraceFrame) -> EventNode:
 
 
 def _validate_data_from_call_tracer(data: dict) -> dict:
+    data = dict(data)
+    if data.get("error"):
+        data["failed"] = True
     # Handle renames
     if "receiver" in data:
         data["address"] = data.pop("receiver")

@@ -1,0 +1,507 @@
+{
+  "client": "anvil/v1.5.1",
+  "cases": {
+    "mstore": {
+      "trace_call": {
+        "error": "{'code': -32601, 'message': 'Method not found'}"
+      },
+      "debug_traceCall": {
+        "failed": false,
+        "gas": 21014,
+        "returnValue": "0x",
+        "structLogs": [
+          {
+            "pc": 0,
+            "op": "PUSH1",
+            "gas": 1027576,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [],
+            "memory": []
+          },
+          {
+            "pc": 2,
+            "op": "PUSH1",
+            "gas": 1027573,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [
+              "0x1"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 4,
+            "op": "MSTORE",
+            "gas": 1027570,
+            "gasCost": 6,
+            "depth": 1,
+            "stack": [
+              "0x1",
+              "0x0"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 5,
+            "op": "PUSH0",
+            "gas": 1027564,
+            "gasCost": 2,
+            "depth": 1,
+            "stack": [],
+            "memory": [
+              "0000000000000000000000000000000000000000000000000000000000000001"
+            ]
+          },
+          {
+            "pc": 6,
+            "op": "STOP",
+            "gas": 1027562,
+            "gasCost": 0,
+            "depth": 1,
+            "stack": [
+              "0x0"
+            ],
+            "memory": [
+              "0000000000000000000000000000000000000000000000000000000000000001"
+            ]
+          }
+        ]
+      }
+    },
+    "mcopy": {
+      "trace_call": {
+        "error": "{'code': -32601, 'message': 'Method not found'}"
+      },
+      "debug_traceCall": {
+        "failed": false,
+        "gas": 21032,
+        "returnValue": "0x",
+        "structLogs": [
+          {
+            "pc": 0,
+            "op": "PUSH1",
+            "gas": 1027576,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [],
+            "memory": []
+          },
+          {
+            "pc": 2,
+            "op": "PUSH1",
+            "gas": 1027573,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [
+              "0xaa"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 4,
+            "op": "MSTORE8",
+            "gas": 1027570,
+            "gasCost": 6,
+            "depth": 1,
+            "stack": [
+              "0xaa",
+              "0x0"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 5,
+            "op": "PUSH1",
+            "gas": 1027564,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [],
+            "memory": [
+              "aa00000000000000000000000000000000000000000000000000000000000000"
+            ]
+          },
+          {
+            "pc": 7,
+            "op": "PUSH1",
+            "gas": 1027561,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [
+              "0x1"
+            ],
+            "memory": [
+              "aa00000000000000000000000000000000000000000000000000000000000000"
+            ]
+          },
+          {
+            "pc": 9,
+            "op": "PUSH1",
+            "gas": 1027558,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [
+              "0x1",
+              "0x0"
+            ],
+            "memory": [
+              "aa00000000000000000000000000000000000000000000000000000000000000"
+            ]
+          },
+          {
+            "pc": 11,
+            "op": "MCOPY",
+            "gas": 1027555,
+            "gasCost": 9,
+            "depth": 1,
+            "stack": [
+              "0x1",
+              "0x0",
+              "0x20"
+            ],
+            "memory": [
+              "aa00000000000000000000000000000000000000000000000000000000000000"
+            ]
+          },
+          {
+            "pc": 12,
+            "op": "MSIZE",
+            "gas": 1027546,
+            "gasCost": 2,
+            "depth": 1,
+            "stack": [],
+            "memory": [
+              "aa00000000000000000000000000000000000000000000000000000000000000",
+              "aa00000000000000000000000000000000000000000000000000000000000000"
+            ]
+          },
+          {
+            "pc": 13,
+            "op": "STOP",
+            "gas": 1027544,
+            "gasCost": 0,
+            "depth": 1,
+            "stack": [
+              "0x40"
+            ],
+            "memory": [
+              "aa00000000000000000000000000000000000000000000000000000000000000",
+              "aa00000000000000000000000000000000000000000000000000000000000000"
+            ]
+          }
+        ]
+      }
+    },
+    "transient": {
+      "trace_call": {
+        "error": "{'code': -32601, 'message': 'Method not found'}"
+      },
+      "debug_traceCall": {
+        "failed": false,
+        "gas": 21215,
+        "returnValue": "0x",
+        "structLogs": [
+          {
+            "pc": 0,
+            "op": "PUSH1",
+            "gas": 1027576,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [],
+            "memory": []
+          },
+          {
+            "pc": 2,
+            "op": "PUSH1",
+            "gas": 1027573,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [
+              "0x2a"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 4,
+            "op": "TSTORE",
+            "gas": 1027570,
+            "gasCost": 100,
+            "depth": 1,
+            "stack": [
+              "0x2a",
+              "0x0"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 5,
+            "op": "PUSH1",
+            "gas": 1027470,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [],
+            "memory": []
+          },
+          {
+            "pc": 7,
+            "op": "TLOAD",
+            "gas": 1027467,
+            "gasCost": 100,
+            "depth": 1,
+            "stack": [
+              "0x0"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 8,
+            "op": "PUSH1",
+            "gas": 1027367,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [
+              "0x2a"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 10,
+            "op": "ADD",
+            "gas": 1027364,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [
+              "0x2a",
+              "0x1"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 11,
+            "op": "STOP",
+            "gas": 1027361,
+            "gasCost": 0,
+            "depth": 1,
+            "stack": [
+              "0x2b"
+            ],
+            "memory": []
+          }
+        ]
+      }
+    },
+    "call": {
+      "trace_call": {
+        "error": "{'code': -32601, 'message': 'Method not found'}"
+      },
+      "debug_traceCall": {
+        "failed": false,
+        "gas": 23644,
+        "returnValue": "0x",
+        "structLogs": [
+          {
+            "pc": 0,
+            "op": "PUSH1",
+            "gas": 1027576,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [],
+            "memory": []
+          },
+          {
+            "pc": 2,
+            "op": "PUSH1",
+            "gas": 1027573,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [
+              "0x20"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 4,
+            "op": "PUSH1",
+            "gas": 1027570,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [
+              "0x20",
+              "0x0"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 6,
+            "op": "PUSH1",
+            "gas": 1027567,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [
+              "0x20",
+              "0x0",
+              "0x0"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 8,
+            "op": "PUSH1",
+            "gas": 1027564,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [
+              "0x20",
+              "0x0",
+              "0x0",
+              "0x0"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 10,
+            "op": "PUSH20",
+            "gas": 1027561,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [
+              "0x20",
+              "0x0",
+              "0x0",
+              "0x0",
+              "0x0"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 31,
+            "op": "PUSH2",
+            "gas": 1027558,
+            "gasCost": 3,
+            "depth": 1,
+            "stack": [
+              "0x20",
+              "0x0",
+              "0x0",
+              "0x0",
+              "0x0",
+              "0x1002"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 34,
+            "op": "CALL",
+            "gas": 1027555,
+            "gasCost": 68138,
+            "depth": 1,
+            "stack": [
+              "0x20",
+              "0x0",
+              "0x0",
+              "0x0",
+              "0x0",
+              "0x1002",
+              "0xffff"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 0,
+            "op": "PUSH1",
+            "gas": 65535,
+            "gasCost": 3,
+            "depth": 2,
+            "stack": [],
+            "memory": []
+          },
+          {
+            "pc": 2,
+            "op": "PUSH1",
+            "gas": 65532,
+            "gasCost": 3,
+            "depth": 2,
+            "stack": [
+              "0x2a"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 4,
+            "op": "MSTORE",
+            "gas": 65529,
+            "gasCost": 6,
+            "depth": 2,
+            "stack": [
+              "0x2a",
+              "0x0"
+            ],
+            "memory": []
+          },
+          {
+            "pc": 5,
+            "op": "PUSH1",
+            "gas": 65523,
+            "gasCost": 3,
+            "depth": 2,
+            "stack": [],
+            "memory": [
+              "000000000000000000000000000000000000000000000000000000000000002a"
+            ]
+          },
+          {
+            "pc": 7,
+            "op": "PUSH1",
+            "gas": 65520,
+            "gasCost": 3,
+            "depth": 2,
+            "stack": [
+              "0x20"
+            ],
+            "memory": [
+              "000000000000000000000000000000000000000000000000000000000000002a"
+            ]
+          },
+          {
+            "pc": 9,
+            "op": "RETURN",
+            "gas": 65517,
+            "gasCost": 0,
+            "depth": 2,
+            "stack": [
+              "0x20",
+              "0x0"
+            ],
+            "memory": [
+              "000000000000000000000000000000000000000000000000000000000000002a"
+            ]
+          },
+          {
+            "pc": 35,
+            "op": "POP",
+            "gas": 1024934,
+            "gasCost": 2,
+            "depth": 1,
+            "stack": [
+              "0x1"
+            ],
+            "memory": [
+              "000000000000000000000000000000000000000000000000000000000000002a"
+            ]
+          },
+          {
+            "pc": 36,
+            "op": "STOP",
+            "gas": 1024932,
+            "gasCost": 0,
+            "depth": 1,
+            "stack": [],
+            "memory": [
+              "000000000000000000000000000000000000000000000000000000000000002a"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
