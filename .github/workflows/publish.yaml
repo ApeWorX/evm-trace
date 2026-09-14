@@ -9,10 +9,13 @@ jobs:
 
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       id-token: write
 
     steps:
     - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
 
     - name: Set up Python
       uses: astral-sh/setup-uv@v7

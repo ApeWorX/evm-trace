@@ -1,11 +1,14 @@
 name: PR Title
 
 on:
-  pull_request_target:
+  pull_request:
     types:
       - opened
       - edited
       - synchronize
+
+permissions:
+  contents: read
 
 jobs:
     pr-title:
@@ -14,4 +17,6 @@ jobs:
         steps:
         - uses: astral-sh/setup-uv@v7
         - name: Check PR Title
-          run: uvx commitlint "${{ github.event.pull_request.title }}"
+          env:
+            PR_TITLE: ${{ github.event.pull_request.title }}
+          run: uvx --from 'commitlint>=2,<3' commitlint "$PR_TITLE"

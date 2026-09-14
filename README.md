@@ -4,7 +4,7 @@ Ethereum Virtual Machine transaction tracing tool
 
 ## Dependencies
 
-- [python3](https://www.python.org/downloads) version 3.9 to 3.12.
+- [Python](https://www.python.org/downloads) 3.10 or newer. CI tests Python 3.10–3.14.
 
 ## Installation
 
@@ -16,15 +16,17 @@ You can install the latest release via [`pip`](https://pypi.org/project/pip/):
 pip install evm-trace
 ```
 
-### via `setuptools`
+### From source
 
-You can clone the repository and use [`setuptools`](https://github.com/pypa/setuptools) for the most up-to-date version:
+To install the current development version from source:
 
 ```bash
 git clone https://github.com/ApeWorX/evm-trace.git
 cd evm-trace
-python3 setup.py install
+python -m pip install .
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup with uv.
 
 ## Quick Usage
 

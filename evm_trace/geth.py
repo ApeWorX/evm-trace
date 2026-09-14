@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 
 from eth_pydantic_types import HexBytes, HexBytes20
 from eth_utils import to_hex, to_int
@@ -82,14 +82,14 @@ class TraceFrame(BaseModel):
         return self.contract_address
 
 
-def create_trace_frames(data: Iterator[dict]) -> Iterator[TraceFrame]:
+def create_trace_frames(data: Iterable[dict]) -> Iterator[TraceFrame]:
     """
     Get trace frames from ``debug_traceTransaction`` response items.
     Sets the ``contract_address`` for CREATE and CREATE2 frames by
     looking ahead and finding it.
 
     Args:
-        data (Iterator[dict]): An iterator of response struct logs.
+        data (Iterable[dict]): Response struct logs.
 
     Returns:
         Iterator[:class:`~evm_trace.geth.TraceFrame`]
@@ -157,13 +157,13 @@ def get_calltree_from_geth_call_trace(data: dict) -> CallTreeNode:
 
 
 def get_calltree_from_geth_trace(
-    trace: Iterator[TraceFrame], show_internal: bool = False, **root_node_kwargs
+    trace: Iterable[TraceFrame], show_internal: bool = False, **root_node_kwargs
 ) -> CallTreeNode:
     """
     Creates a CallTreeNode from a given transaction trace.
 
     Args:
-        trace (Iterator[TraceFrame]): Iterator of transaction trace frames.
+        trace (Iterable[TraceFrame]): Transaction trace frames.
         show_internal (bool): Boolean whether to display internal calls.
           Defaults to ``False``.
         root_node_kwargs (dict): Keyword arguments passed to the root ``CallTreeNode``.
@@ -257,7 +257,7 @@ def extract_memory(offset: HexBytes, size: HexBytes, memory: list[HexBytes]) -> 
 class _FrameIterator:
     """Iterator with one-frame lookahead."""
 
-    def __init__(self, frames: Iterator[TraceFrame]):
+    def __init__(self, frames: Iterable[TraceFrame]):
         self.frames = iter(frames)
         self.next_frame = next(self.frames, None)
 
@@ -270,7 +270,7 @@ class _FrameIterator:
 
 
 def _create_node(
-    trace: Iterator[TraceFrame] | _FrameIterator, show_internal: bool = False, **node_kwargs
+    trace: Iterable[TraceFrame] | _FrameIterator, show_internal: bool = False, **node_kwargs
 ) -> CallTreeNode:
     """Build a branching call tree using the opcodes documented at https://www.evm.codes/."""
     if show_internal:

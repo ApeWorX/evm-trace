@@ -44,7 +44,7 @@ def test_event_positions_interleave_with_calls(positions):
         events=events,
         calls=[CallTreeNode(call_type="STATICCALL"), CallTreeNode(call_type="DELEGATECALL")],
     )
-    expected = []
+    expected: list[str] = []
     for position, call_type in enumerate(["STATICCALL", "DELEGATECALL", None]):
         expected.extend(
             f"EVENT: 0x{event.topics[0].hex()}" for event in events if event.position == position

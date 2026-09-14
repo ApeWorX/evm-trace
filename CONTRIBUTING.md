@@ -1,22 +1,28 @@
 # Development
 
-To get started with working on the codebase, use the following steps prepare your local environment:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then create the development environment with Python 3.10 or newer:
 
 ```bash
 # clone the github repo and navigate into the folder
 git clone https://github.com/ApeWorX/evm-trace.git
 cd evm-trace
 
-# create and load a virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# install evm-trace into the virtual environment
-python setup.py install
-
-# install the developer dependencies (-e is interactive mode)
-pip install -e .'[dev]'
+# install the project in editable mode and all development dependency groups
+uv sync --group dev
 ```
+
+Run the same checks as CI:
+
+```bash
+uv run --no-sync pytest
+uv run --no-sync ruff check .
+uv run --no-sync ruff format --check .
+uv run --no-sync mypy .
+uv run --no-sync mdformat --check README.md CONTRIBUTING.md tests/data/geth/historical_delegatecalls.md
+uv build
+```
+
+The `style`, `lint`, and `test` dependency groups also support smaller environments for individual CI jobs. They are development groups, not installable package extras. `uv.lock` is local and ignored; run `uv sync --upgrade --group dev` to refresh dependencies when needed.
 
 ## Pre-Commit Hooks
 
@@ -26,11 +32,11 @@ Use of `pre-commit` is not a requirement, but is highly recommended.
 Install `pre-commit` locally from the root folder:
 
 ```bash
-pip install pre-commit
-pre-commit install
+uv run --no-sync pre-commit install --hook-type pre-commit --hook-type commit-msg
 ```
 
 Committing will now automatically run the local hooks and ensure that your commit passes all lint checks.
+Ruff, mypy, and mdformat hooks use the tools from the uv development environment, so they share the project's dependency constraints and installed dependencies. After changing dependency groups, run `uv sync --group dev` before committing.
 
 ## Pull Requests
 

@@ -31,7 +31,7 @@ class TestTraceFrame:
         gas = 4732305
         gas_cost = 3
         depth = 1
-        stack = []
+        stack: list[HexBytes] = []
         trace_frame = TraceFrame(pc=pc, op=op, gas=gas, gasCost=gas_cost, depth=depth, stack=stack)
         assert trace_frame.pc == pc
         assert trace_frame.op == op
@@ -299,7 +299,9 @@ def test_consecutive_create_addresses_resolve_at_first_resumed_frame(reth_trace_
     case = reth_trace_cases["consecutive_create"]
     frames = list(create_trace_frames(case["geth"]["structLogs"]))
     creates = [frame for frame in frames if frame.op == "CREATE"]
-    assert [frame.address.hex() for frame in creates] == [
+    addresses = [frame.address for frame in creates]
+    assert all(address is not None for address in addresses)
+    assert [address.hex() for address in addresses if address is not None] == [
         child["to"][2:] for child in case["call_tracer"]["calls"]
     ]
     assert len(frames) == len(case["geth"]["structLogs"])

@@ -2,78 +2,93 @@ on: ["push", "pull_request"]
 
 name: Test
 
+permissions:
+  contents: read
+
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
-    linting:
-        runs-on: ubuntu-latest
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.10"
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+      - name: Run Ruff Lint
+        run: uv run --only-group style ruff check .
+      - name: Run Ruff Format
+        run: uv run --only-group style ruff format --check .
+      - name: Run mdformat
+        run: uv run --only-group style mdformat --check *.md tests/data/**/*.md
 
-        steps:
-        - uses: actions/checkout@v5
+  type-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.10"
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+      - name: Run MyPy
+        run: uv run --no-default-groups --group lint --group test mypy .
 
-        - name: Setup Python
-          uses: astral-sh/setup-uv@v7
-          with:
-              python-version: "3.10"
+  functional:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+      - name: Install test dependencies
+        run: uv sync --no-default-groups --group test
+      - name: Run Tests
+        run: uv run --no-sync pytest
 
-        - name: Run Ruff Lint
-          run: uv run --group lint ruff check .
-
-        - name: Run Ruff Format
-          run: uv run --group lint ruff format --check .
-
-        - name: Run mdformat
-          run: uv run --group lint mdformat --check *.md
-
-    type-check:
-        runs-on: ubuntu-latest
-
-        steps:
-        - uses: actions/checkout@v5
-
-        - name: Setup Python
-          uses: astral-sh/setup-uv@v7
-          with:
-              python-version: "3.10"
-
-        - name: Run MyPy
-          run: uv run --group lint --group test mypy .
-
-    functional:
-        runs-on: ${{ matrix.os }}
-
-        strategy:
-            matrix:
-                os: [ubuntu-latest, macos-latest, windows-latest]
-                python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-
-        steps:
-        - uses: actions/checkout@v5
-
-        - name: Setup Python
-          uses: astral-sh/setup-uv@v7
-          with:
-              python-version: ${{ matrix.python-version }}
-
-        - name: Run Tests
-          run: uv run --group test pytest -m "not fuzzing" -n 0 -s --cov
-
-# NOTE: uncomment this block after you've marked tests with @pytest.mark.fuzzing
-#    fuzzing:
-#        runs-on: ubuntu-latest
-#
-#        strategy:
-#            fail-fast: true
-#
-#        steps:
-#        - uses: actions/checkout@v4
-#
-#        - name: Setup Python
-#          uses: astral-sh/setup-uv@v7
-#          with:
-#              python-version: "3.10"
-#
-#        - name: Run Tests
-#          run: uv run --group test pytest -m "fuzzing" --no-cov -s
+  package:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        setuptools: [minimum, latest]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.10"
+      - name: Build with minimum setuptools
+        if: matrix.setuptools == 'minimum'
+        run: |
+          echo 'setuptools==77.0.3' > "$RUNNER_TEMP/build-constraints.txt"
+          uv build --build-constraint "$RUNNER_TEMP/build-constraints.txt"
+      - name: Build with latest setuptools
+        if: matrix.setuptools == 'latest'
+        run: uv build
+      - name: Install wheel in an isolated environment
+        run: |
+          uv venv "$RUNNER_TEMP/wheel-smoke"
+          uv pip install --python "$RUNNER_TEMP/wheel-smoke/bin/python" dist/*.whl
+      - name: Check installed package
+        working-directory: ${{ runner.temp }}
+        run: |
+          uv run --no-project --python "$RUNNER_TEMP/wheel-smoke/bin/python" python -I -c '
+          from importlib.metadata import version
+          from importlib.resources import files
+          import evm_trace.vmtrace
+          from evm_trace import CallTreeNode, get_calltree_from_geth_call_trace
+          assert version("evm-trace")
+          assert files("evm_trace").joinpath("py.typed").is_file()
+          assert get_calltree_from_geth_call_trace({"type": "CALL"}) == CallTreeNode(call_type="CALL")
+          '
