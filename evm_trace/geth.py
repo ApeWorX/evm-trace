@@ -145,10 +145,12 @@ def get_calltree_from_geth_call_trace(data: dict) -> CallTreeNode:
     data = _validate_data_from_call_tracer(data)
     root = CallTreeNode(**data)
 
-    def fix_depth(r: CallTreeNode):
-        for c in r.calls:
-            c.depth = r.depth + 1
-            fix_depth(c)
+    def fix_depth(node: CallTreeNode):
+        for event in node.events:
+            event.depth = node.depth + 1
+        for child in node.calls:
+            child.depth = node.depth + 1
+            fix_depth(child)
 
     fix_depth(root)
     return root
@@ -316,7 +318,10 @@ def _create_node(
             node_kwargs.setdefault("calls", []).append(subcall)
 
         elif frame.op.startswith("LOG"):
-            node_kwargs.setdefault("events", []).append(_create_event_node(frame))
+            event = _create_event_node(frame)
+            event.depth = node_kwargs["depth"] + 1
+            event.position = len(node_kwargs.get("calls", []))
+            node_kwargs.setdefault("events", []).append(event)
         elif frame.op == "SELFDESTRUCT":
             node_kwargs["selfdestruct"] = True
             break
@@ -364,6 +369,14 @@ def _validate_data_from_call_tracer(data: dict) -> dict:
         data["gas_limit"] = data.pop("gas")
     if "type" in data:
         data["call_type"] = data.pop("type")
+
+    if "logs" in data:
+        # Depth is assigned after constructing the tree. Copy each log to leave
+        # the RPC response untouched, including when parsing it more than once.
+        data["events"] = [
+            *data.get("events", []),
+            *({**log, "depth": 0} for log in data.pop("logs") or []),
+        ]
 
     # Remove unneeded keys
     unneeded_keys = ("sender", "from")

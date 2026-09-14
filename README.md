@@ -103,6 +103,25 @@ These synthetic frames do not expose gas/refund/error fields, and `storage` cont
 
 For call-tree reconstruction, struct logs need memory enabled to recover calldata, initcode, events, and return values. If a call has no opcode frames (for example a precompile), enable return-data capture as well; without it the full returned bytes cannot be recovered from the truncated output-memory copy. `LOG0` events have no topics and their `selector` is `None`.
 
+### Events and call order
+
+Struct-log call trees include `LOG0`–`LOG4` events. For `callTracer`, request
+`{"tracer": "callTracer", "tracerConfig": {"withLog": true}}` to include logs;
+`get_calltree_from_geth_call_trace` imports them into each node's `events` list.
+The emitting `event.address` is retained when the client supplies it, including
+logs emitted through DELEGATECALL.
+
+`event.position` is the number of child calls preceding that event in its parent.
+The text renderer uses it to interleave events and calls in execution order,
+while `events` and `calls` remain separate lists. Older traces without positions
+use `None` and retain the previous events-first display order. If callers filter
+out child calls, they should update event positions; positions beyond the remaining
+calls render at the end.
+
+Struct logs include attempted emissions even when execution later reverts.
+A client's `callTracer` may discard reverted logs, so event lists across these
+formats are not necessarily equivalent for failed calls.
+
 ### Gas Reports
 
 If you are using a node that supports creating traces, you can get a gas report.

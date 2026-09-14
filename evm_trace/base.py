@@ -32,6 +32,16 @@ class EventNode(BaseModel):
     topics: list[HexBytes] = Field(default_factory=list)
     """Event topics."""
 
+    address: HexBytes | None = None
+    """Emitting address, when supplied by the tracer."""
+
+    position: int | None = Field(default=None, ge=0)
+    """Number of preceding child calls; None when execution order is unknown."""
+
+    @field_validator("position", mode="before")
+    def validate_position(cls, value):
+        return int(value, 16) if isinstance(value, str) else value
+
     @property
     def selector(self) -> HexBytes | None:
         """
