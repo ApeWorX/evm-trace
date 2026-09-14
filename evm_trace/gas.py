@@ -20,7 +20,9 @@ def get_gas_report(calltree: "CallTreeNode") -> GasReport:
         :class:`~evm_trace.gas.GasReport`: Gas report structure from a call tree.
     """
     report = {
-        calltree.address: {calltree.calldata[:4]: [calltree.gas_cost] if calltree.gas_cost else []}
+        calltree.address: {
+            calltree.calldata[:4]: [calltree.gas_cost] if calltree.gas_cost is not None else []
+        }
     }
     return merge_reports(report, *map(get_gas_report, calltree.calls))
 
