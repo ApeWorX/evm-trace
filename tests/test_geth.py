@@ -366,3 +366,65 @@ def test_failed_create_address_is_unknown(opcode):
     child = get_calltree_from_geth_trace(frames).calls[0]
     assert child.failed
     assert child.address == b""
+
+
+@pytest.mark.parametrize("call_type", [CallType.CREATE, "CREATE2"])
+def test_legacy_root_call_type_alias(call_type):
+    node = get_calltree_from_geth_trace(iter(()), callType=call_type)
+    assert node.call_type == call_type
+
+
+def test_legacy_root_call_type_alias_takes_precedence():
+    node = get_calltree_from_geth_trace(iter(()), callType="CREATE", call_type=CallType.CALL)
+    assert node.call_type == CallType.CREATE
+
+
+@pytest.mark.parametrize("opcode", ["CREATE", "CREATE2"])
+@pytest.mark.parametrize(
+    "exit_opcode,result,expected_output",
+    [("RETURN", "0x0", b""), ("RETURN", "0x1002", b"\xef"), ("REVERT", "0x0", b"\xef")],
+)
+def test_creation_output_after_code_deposit(opcode, exit_opcode, result, expected_output):
+    # A zero creation result after a successful RETURN means code validation/deposit failed.
+    # Live examples: forbidden 0xef prefix, code-deposit OOG, and code-size limit.
+    # Initcode: MSTORE8(0, 0xef); RETURN(0, 1), or REVERT(0, 1).
+    initcode = bytes.fromhex("60ef60005360016000" + ("f3" if exit_opcode == "RETURN" else "fd"))
+    frames = create_trace_frames(
+        [
+            {
+                "pc": 0,
+                "op": opcode,
+                "gas": 100000,
+                "gasCost": 32000,
+                "depth": 1,
+                "stack": (["0x0"] if opcode == "CREATE2" else []) + ["0xa", "0x0", "0x0"],
+                "memory": [initcode.ljust(32, b"\x00")],
+            },
+            {
+                "pc": 9,
+                "op": exit_opcode,
+                "gas": 100,
+                "gasCost": 0,
+                "depth": 2,
+                "stack": ["0x1", "0x0"],
+                "memory": [b"\xef" + bytes(31)],
+            },
+            {"pc": 1, "op": "STOP", "gas": 100, "gasCost": 0, "depth": 1, "stack": [result]},
+        ]
+    )
+    child = get_calltree_from_geth_trace(frames).calls[0]
+    assert child.failed == (result == "0x0")
+    assert child.calldata == initcode
+    assert child.returndata == expected_output
+
+
+@pytest.mark.parametrize("depth,expected", [(2, 2), ("0x2", 2), (None, 0)])
+def test_root_depth_is_normalized_before_building_children(reth_trace_cases, depth, expected):
+    case = reth_trace_cases["nested_siblings"]
+    node = get_calltree_from_geth_trace(
+        create_trace_frames(case["geth"]["structLogs"]), depth=depth
+    )
+    assert node.depth == expected
+    assert node.calls[0].depth == expected + 1
+    assert node.calls[0].calls[0].depth == expected + 2
+    assert node.calls[1].depth == expected + 1

@@ -165,10 +165,15 @@ def get_calltree_from_geth_trace(
         show_internal (bool): Boolean whether to display internal calls.
           Defaults to ``False``.
         root_node_kwargs (dict): Keyword arguments passed to the root ``CallTreeNode``.
+          The legacy ``callType`` alias is accepted for ``call_type``.
 
     Returns:
         :class:`~evm_trace.base.CallTreeNode`: Call tree of transaction trace.
     """
+
+    # Preserve the public alias without passing it into recursive node construction.
+    if "callType" in root_node_kwargs:
+        root_node_kwargs["call_type"] = root_node_kwargs.pop("callType")
 
     return _create_node(
         trace=trace,
@@ -271,7 +276,8 @@ def _create_node(
 
     frames = trace if isinstance(trace, _FrameIterator) else _FrameIterator(trace)
     node_kwargs.setdefault("call_type", CallType.CALL)
-    node_kwargs.setdefault("depth", 0)
+    # Normalize model-supported hex depths before computing child depths.
+    node_kwargs["depth"] = CallTreeNode.validate_ints(node_kwargs.get("depth", 0))
     evm_depth = frames.next_frame.depth if frames.next_frame else 0
 
     while frames.next_frame is not None and frames.next_frame.depth == evm_depth:
@@ -294,6 +300,10 @@ def _create_node(
             resumed = frames.next_frame
             if resumed is not None and resumed.depth == evm_depth and resumed.stack:
                 result = to_int(resumed.stack[-1])
+                if is_create and result == 0 and not subcall.failed:
+                    # Initcode can RETURN successfully but fail code validation/deposit.
+                    # Those bytes are not returned to the caller; REVERT data is retained.
+                    subcall.returndata = HexBytes(b"")
                 subcall.failed = subcall.failed or result == 0
                 if is_create:
                     # Zero reports failure, not the attempted contract's address.
