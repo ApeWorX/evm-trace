@@ -7,6 +7,13 @@ from pydantic import Field, RootModel, field_validator
 from evm_trace.base import BaseModel, CallTreeNode, EventNode
 from evm_trace.enums import CALL_OPCODES, CallType
 
+# Geth's OpCode.String() formats unknown opcodes as "opcode 0xXX not defined".
+UNKNOWN_OPCODE_PREFIX = "opcode 0x"
+
+
+def _stack_address(value: HexBytes) -> HexBytes20:
+    return HexBytes20.__eth_pydantic_validate__(value[-20:].rjust(20, b"\x00"))
+
 
 class TraceMemory(RootModel[list[HexBytes]]):
     root: list[HexBytes] = []
@@ -70,9 +77,7 @@ class TraceFrame(BaseModel):
         if not self.contract_address and (
             self.op in CALL_OPCODES and CallType.CREATE.value not in self.op
         ):
-            self.contract_address = HexBytes20.__eth_pydantic_validate__(
-                self.stack[-2][-20:].rjust(20, b"\x00")
-            )
+            self.contract_address = _stack_address(self.stack[-2])
 
         return self.contract_address
 
@@ -108,19 +113,18 @@ def create_trace_frames(data: Iterator[dict]) -> Iterator[TraceFrame]:
 
 def _get_create_frames(frame: TraceFrame, frames: Iterator[dict]) -> list[TraceFrame]:
     create_frames = [frame]
-    pending = [frame]
+    pending_creates = [frame]
     for next_frame in frames:
         next_frame_obj = TraceFrame.model_validate(next_frame)
         # Resolve the previous CREATE before handling a consecutive CREATE at the same depth.
-        while pending and next_frame_obj.depth <= pending[-1].depth:
-            previous = pending.pop()
+        while pending_creates and next_frame_obj.depth <= pending_creates[-1].depth:
+            previous = pending_creates.pop()
             if next_frame_obj.depth == previous.depth and next_frame_obj.stack:
-                raw_addr = next_frame_obj.stack[-1][-20:].rjust(20, b"\x00")
-                previous.contract_address = HexBytes20.__eth_pydantic_validate__(raw_addr)
+                previous.contract_address = _stack_address(next_frame_obj.stack[-1])
         create_frames.append(next_frame_obj)
-        if next_frame_obj.op in ("CREATE", "CREATE2"):
-            pending.append(next_frame_obj)
-        if not pending:
+        if next_frame_obj.op in (CallType.CREATE, CallType.CREATE2):
+            pending_creates.append(next_frame_obj)
+        if not pending_creates:
             break
 
     return create_frames
@@ -244,7 +248,7 @@ def extract_memory(offset: HexBytes, size: HexBytes, memory: list[HexBytes]) -> 
 
 
 class _FrameIterator:
-    """A single shared lookahead keeps a no-code call from consuming its parent's frames."""
+    """Iterator with one-frame lookahead."""
 
     def __init__(self, frames: Iterator[TraceFrame]):
         self.frames = iter(frames)
@@ -252,7 +256,8 @@ class _FrameIterator:
 
     def pop(self) -> TraceFrame:
         frame = self.next_frame
-        assert frame is not None
+        if frame is None:
+            raise StopIteration
         self.next_frame = next(self.frames, None)
         return frame
 
@@ -260,17 +265,18 @@ class _FrameIterator:
 def _create_node(
     trace: Iterator[TraceFrame] | _FrameIterator, show_internal: bool = False, **node_kwargs
 ) -> CallTreeNode:
+    """Build a branching call tree using the opcodes documented at https://www.evm.codes/."""
     if show_internal:
         raise NotImplementedError()
 
     frames = trace if isinstance(trace, _FrameIterator) else _FrameIterator(trace)
-    node_kwargs.setdefault("call_type", node_kwargs.pop("callType", CallType.CALL))
+    node_kwargs.setdefault("call_type", CallType.CALL)
     node_kwargs.setdefault("depth", 0)
     evm_depth = frames.next_frame.depth if frames.next_frame else 0
 
     while frames.next_frame is not None and frames.next_frame.depth == evm_depth:
         frame = frames.pop()
-        if frame.error or frame.op == "INVALID" or frame.op.startswith("opcode 0x"):
+        if frame.error or frame.op == "INVALID" or frame.op.startswith(UNKNOWN_OPCODE_PREFIX):
             node_kwargs["failed"] = True
             break
 
@@ -279,7 +285,7 @@ def _create_node(
             data["depth"] = node_kwargs["depth"] + 1
             if frame.op == "DELEGATECALL":
                 data["value"] = node_kwargs.get("value", 0)
-            is_create = frame.op in ("CREATE", "CREATE2")
+            is_create = frame.op in (CallType.CREATE, CallType.CREATE2)
             if is_create and data["address"] is None:
                 data["address"] = b""
             entered = frames.next_frame is not None and frames.next_frame.depth > evm_depth
@@ -290,16 +296,16 @@ def _create_node(
                 result = to_int(resumed.stack[-1])
                 subcall.failed = subcall.failed or result == 0
                 if is_create:
-                    subcall.address = (
-                        HexBytes(result.to_bytes(32, "big")[-20:]) if result else HexBytes(b"")
-                    )
+                    # Zero reports failure, not the attempted contract's address.
+                    # Keep the default empty address when the address is unknown.
+                    subcall.address = _stack_address(resumed.stack[-1]) if result else HexBytes(b"")
                 elif not entered:
                     # Memory only exposes a possibly truncated copy, not the output's length.
                     if resumed.return_data is not None:
                         subcall.returndata = resumed.return_data
             node_kwargs.setdefault("calls", []).append(subcall)
 
-        elif frame.op in ("LOG0", "LOG1", "LOG2", "LOG3", "LOG4"):
+        elif frame.op.startswith("LOG"):
             node_kwargs.setdefault("events", []).append(_create_event_node(frame))
         elif frame.op == "SELFDESTRUCT":
             node_kwargs["selfdestruct"] = True
@@ -309,7 +315,8 @@ def _create_node(
         elif frame.op in ("RETURN", "REVERT"):
             if not node_kwargs.get("returndata"):
                 node_kwargs["returndata"] = frame.memory.get(frame.stack[-1], frame.stack[-2])
-            node_kwargs.setdefault("failed", frame.op == "REVERT")
+            if frame.op == "REVERT":
+                node_kwargs["failed"] = True
             break
 
     return CallTreeNode(**node_kwargs)

@@ -6,36 +6,29 @@ from evm_trace.base import BaseModel, CallTreeNode
 from evm_trace.enums import CallType
 
 
-class CallAction(BaseModel):
+class _ValueAction(BaseModel):
     gas: int
     """
     The amount of gas available for the action.
     """
 
+    value: int
+
+    @field_validator("value", "gas", mode="before")
+    def convert_integer(cls, v):
+        return int(v, 16) if isinstance(v, str) else v
+
+
+class CallAction(_ValueAction):
     input: str | None = None
     receiver: str | None = Field(alias="to", default=None)
     sender: str = Field(alias="from")
-    value: int
     # only used to recover the specific call type
     call_type: str = Field(alias="callType", repr=False)
 
-    @field_validator("value", "gas", mode="before")
-    def convert_integer(cls, v):
-        return int(v, 16) if isinstance(v, str) else v
 
-
-class CreateAction(BaseModel):
-    gas: int
-    """
-    The amount of gas available for the action.
-    """
-
+class CreateAction(_ValueAction):
     init: str
-    value: int
-
-    @field_validator("value", "gas", mode="before")
-    def convert_integer(cls, v):
-        return int(v, 16) if isinstance(v, str) else v
 
 
 class SelfDestructAction(BaseModel):

@@ -30,12 +30,12 @@ class EventNode(BaseModel):
     """The depth in a call-tree where the event took place."""
 
     topics: list[HexBytes] = Field(default_factory=list)
-    """Event topics. LOG0 has no topics or selector."""
+    """Event topics."""
 
     @property
     def selector(self) -> HexBytes | None:
         """
-        The selector is always the first topic.
+        The first topic, or None when there are no topics.
         """
         return self.topics[0] if self.topics else None
 

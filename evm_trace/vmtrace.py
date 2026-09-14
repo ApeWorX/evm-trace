@@ -24,36 +24,15 @@ POP_OPCODES = {
 # fmt: on
 POPCODES = {op: n for n, opcodes in POP_OPCODES.items() for op in opcodes}
 POPCODES.update({f"LOG{n}": n + 2 for n in range(0, 5)})
-POPCODES.update({f"SWAP{i}": i + 1 for i in range(1, 17)})
-POPCODES.update({f"DUP{i}": i for i in range(1, 17)})
 POPCODES.update(TLOAD=1, TSTORE=2, MCOPY=3, BLOBHASH=1)
 OPCODE_NAMES = {value: name for name, value in vars(opcode_values).items() if name.isupper()}
-OPCODE_NAMES[0xFE] = "INVALID"
-MEMORY_OPCODES = {
-    "MLOAD",
-    "MSTORE",
-    "MSTORE8",
-    "SHA3",
-    "KECCAK256",
-    "RETURN",
-    "REVERT",
-    "CALLDATACOPY",
-    "CODECOPY",
-    "RETURNDATACOPY",
-    "EXTCODECOPY",
-    "MCOPY",
-    "CREATE",
-    "CREATE2",
-    "CALL",
-    "CALLCODE",
-    "DELEGATECALL",
-    "STATICCALL",
-    "LOG0",
-    "LOG1",
-    "LOG2",
-    "LOG3",
-    "LOG4",
-}
+# Match Geth's opcode spelling. vmTrace has no fork context to distinguish 0x44's meaning.
+# Explicit client names (including SHA3 and PREVRANDAO) are preserved.
+OPCODE_NAMES.update({0x20: "KECCAK256", 0x44: "DIFFICULTY", 0xFE: "INVALID"})
+
+
+class IncompleteTraceError(ValueError):
+    """The trace omits information required to reconstruct execution state."""
 
 
 class uint256(int):
@@ -77,7 +56,7 @@ class VMOperation(Struct):
     sub: VMTrace | None
     """Subordinate trace of the CALL/CREATE if applicable."""
     op: str | None = None
-    """Optional client extension; otherwise recovered from code and pc."""
+    """Opcode name, recovered from code when absent."""
     idx: str | None = None
     """Optional Erigon index in the tree."""
 
@@ -158,6 +137,12 @@ def to_trace_frames(
     for op in trace.ops:
         opcode = op.op
         if opcode is None:
+            if not trace.code:
+                raise IncompleteTraceError(f"Incomplete vmTrace: missing bytecode at pc {op.pc}")
+            if op.pc < 0:
+                raise ValueError(f"Invalid vmTrace: negative program counter {op.pc}")
+            # EVM execution falls through to STOP beyond the end of known bytecode,
+            # including when a final PUSH advances past truncated immediate bytes.
             byte = trace.code[op.pc] if op.pc < len(trace.code) else 0
             opcode = OPCODE_NAMES.get(byte, "INVALID")
 
@@ -198,9 +183,10 @@ def to_trace_frames(
                 opcode in ("CALL", "CALLCODE", "STATICCALL", "DELEGATECALL", "CREATE", "CREATE2")
                 and not op.ex.push
             ):
-                raise ValueError(f"Incomplete vmTrace: missing {opcode} result push at pc {op.pc}")
-            if opcode in MEMORY_OPCODES:
-                _expand_memory(memory, opcode, stack)
+                raise IncompleteTraceError(
+                    f"Incomplete vmTrace: missing {opcode} result push at pc {op.pc}"
+                )
+            _expand_memory(memory, opcode, stack)
             if opcode == "MCOPY":
                 destination, source, size = (to_int(value) for value in stack.values[-3:][::-1])
                 # This can be reconstructed even when a client omits MCOPY's memory delta.
@@ -232,29 +218,29 @@ def to_trace_frames(
 
 
 def _expand_memory(memory: Memory, opcode: str, stack: Stack) -> None:
-    """Memory reads and call inputs can expand memory without emitting a delta."""
+    """Expand memory for opcode operands."""
 
-    def item(index: int) -> int:
+    def peek_stack(index: int) -> int:
         return to_int(stack.values[-index])
 
     if opcode in ("MLOAD", "MSTORE", "MSTORE8"):
-        memory.extend(item(1), 1 if opcode == "MSTORE8" else 32)
+        memory.extend(peek_stack(1), 1 if opcode == "MSTORE8" else 32)
     elif opcode in ("SHA3", "KECCAK256", "RETURN", "REVERT") or opcode.startswith("LOG"):
-        memory.extend(item(1), item(2))
+        memory.extend(peek_stack(1), peek_stack(2))
     elif opcode in ("CALLDATACOPY", "CODECOPY", "RETURNDATACOPY"):
-        memory.extend(item(1), item(3))
+        memory.extend(peek_stack(1), peek_stack(3))
     elif opcode == "EXTCODECOPY":
-        memory.extend(item(2), item(4))
+        memory.extend(peek_stack(2), peek_stack(4))
     elif opcode == "MCOPY":
-        memory.extend(max(item(1), item(2)), item(3))
+        memory.extend(max(peek_stack(1), peek_stack(2)), peek_stack(3))
     elif opcode in ("CREATE", "CREATE2"):
-        memory.extend(item(2), item(3))
+        memory.extend(peek_stack(2), peek_stack(3))
     elif opcode in ("CALL", "CALLCODE"):
-        memory.extend(item(4), item(5))
-        memory.extend(item(6), item(7))
+        memory.extend(peek_stack(4), peek_stack(5))
+        memory.extend(peek_stack(6), peek_stack(7))
     elif opcode in ("DELEGATECALL", "STATICCALL"):
-        memory.extend(item(3), item(4))
-        memory.extend(item(5), item(6))
+        memory.extend(peek_stack(3), peek_stack(4))
+        memory.extend(peek_stack(5), peek_stack(6))
 
 
 class RPCResponse(Struct):

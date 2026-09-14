@@ -4,7 +4,7 @@ Ethereum Virtual Machine transaction tracing tool
 
 ## Dependencies
 
-- [python3](https://www.python.org/downloads) version 3.10 or newer.
+- [python3](https://www.python.org/downloads) version 3.9 to 3.12.
 
 ## Installation
 
@@ -23,7 +23,7 @@ You can clone the repository and use [`setuptools`](https://github.com/pypa/setu
 ```bash
 git clone https://github.com/ApeWorX/evm-trace.git
 cd evm-trace
-python3 -m pip install -e .
+python3 setup.py install
 ```
 
 ## Quick Usage
@@ -95,9 +95,11 @@ for frame in to_trace_frames(vm_trace, address=transaction_to):
 
 `op` and `idx` are optional client extensions. The converter can recover opcode names from `code` and `pc`, reconstruct Cancun stack effects and memory expansion, and replay `DUP`, `SWAP`, and `MCOPY` directly. Memory snapshots are taken **before** the current instruction expands or writes memory, matching modern Geth struct logs. This changes the older converter's expansion timing.
 
+Recovered opcode names use Geth spelling (`KECCAK256` for `0x20`, `DIFFICULTY` for `0x44`). The trace does not identify the fork, so `0x44` cannot distinguish pre-Merge difficulty from post-Merge randomness. Explicit names supplied by the client are preserved.
+
 `frame.address` identifies the execution context: `DELEGATECALL` and `CALLCODE` retain their caller's context, while successful CREATE operations use the returned address. Failed creation addresses are unavailable. `copy_memory=False` yields a mutable `memoryview`; consume it immediately.
 
-These synthetic frames do not expose gas/refund/error fields, and `storage` contains only the storage deltas reported so far in that call. They are not a complete Geth `TraceFrame` substitute. Client output can also be incomplete: Reth 2.5.0 has reproducible memory, call-result, storage, and missing-operation defects. Missing CALL/CREATE result pushes now raise `ValueError`; other client defects may still produce incorrect frames. See the [client investigation and reproducible cases](docs/vmtrace-review.md).
+These synthetic frames do not expose gas/refund/error fields, and `storage` contains only the storage deltas reported so far in that call. They are not a complete Geth `TraceFrame` substitute. Client output can also be incomplete; see the [upstream Reth fixes](https://github.com/paradigmxyz/reth/pull/27213). Missing bytecode (when opcode names are absent) and missing CALL/CREATE result pushes raise `evm_trace.vmtrace.IncompleteTraceError`, a `ValueError` subclass. Other missing or incorrect client data may still produce incorrect frames.
 
 For call-tree reconstruction, struct logs need memory enabled to recover calldata, initcode, events, and return values. If a call has no opcode frames (for example a precompile), enable return-data capture as well; without it the full returned bytes cannot be recovered from the truncated output-memory copy. `LOG0` events have no topics and their `selector` is `None`.
 
