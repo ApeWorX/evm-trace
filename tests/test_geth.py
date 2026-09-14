@@ -428,3 +428,74 @@ def test_root_depth_is_normalized_before_building_children(reth_trace_cases, dep
     assert node.calls[0].depth == expected + 1
     assert node.calls[0].calls[0].depth == expected + 2
     assert node.calls[1].depth == expected + 1
+
+
+def test_call_tracer_logs_preserve_data_order_depth_and_input():
+    emitter = "0x" + "11" * 20
+    raw = {
+        "type": "CALL",
+        "depth": "0x2",
+        "logs": [
+            {"address": emitter, "topics": [], "data": "0xaa", "position": "0x0"},
+            {"address": emitter, "topics": ["0x" + "22" * 32], "data": "0xbb", "position": 1},
+        ],
+        "calls": [
+            {
+                "type": "DELEGATECALL",
+                "logs": [{"address": emitter, "topics": [], "data": "0xcc", "position": 0}],
+            }
+        ],
+    }
+    original = copy.deepcopy(raw)
+    node = get_calltree_from_geth_call_trace(raw)
+    assert raw == original
+    assert node == get_calltree_from_geth_call_trace(raw)
+    assert [event.position for event in node.events] == [0, 1]
+    assert [event.data for event in node.events] == [b"\xaa", b"\xbb"]
+    assert node.events[1].topics == [bytes.fromhex("22" * 32)]
+    assert [event.depth for event in node.events] == [3, 3]
+    assert node.calls[0].events[0].depth == 4
+    assert node.calls[0].events[0].address == bytes.fromhex("11" * 20)
+    assert node.calls[0].events[0].data == b"\xcc"
+    assert str(node).splitlines() == [
+        "CALL",
+        "├── EVENT: None",
+        "├── DELEGATECALL",
+        "│   └── EVENT: None",
+        "└── EVENT: 0x" + "22" * 32,
+    ]
+
+
+def test_structlog_events_follow_child_calls():
+    raw = [
+        {
+            "pc": 0,
+            "op": "CALL",
+            "gas": 100000,
+            "gasCost": 100,
+            "depth": 1,
+            "stack": ["0x0"] * 5 + ["0x1002", "0xff"],
+        },
+        {
+            "pc": 1,
+            "op": "LOG0",
+            "gas": 99900,
+            "gasCost": 375,
+            "depth": 1,
+            "stack": ["0x1", "0x0", "0x0"],
+        },
+        {"pc": 2, "op": "STOP", "gas": 99525, "gasCost": 0, "depth": 1},
+    ]
+    node = get_calltree_from_geth_trace(create_trace_frames(raw), depth=2)
+    assert node.events[0].position == 1
+    assert node.events[0].depth == 3
+    assert str(node).splitlines() == [
+        "CALL",
+        "├── CALL: 0x0000000000000000000000000000000000001002",
+        "└── EVENT: None",
+    ]
+
+
+@pytest.mark.parametrize("logs", [None, []])
+def test_empty_call_tracer_logs(logs):
+    assert get_calltree_from_geth_call_trace({"type": "CALL", "logs": logs}).events == []

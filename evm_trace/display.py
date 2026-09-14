@@ -1,3 +1,4 @@
+from collections import defaultdict
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Optional, Union, cast
 
@@ -120,16 +121,21 @@ class TreeRepresentation:
             # Events have no children.
             return
 
-        # Handle events, which won't have any sub-calls or anything.
-        total_events = len(root.events)
-        for index, event in enumerate(root.events, start=1):
-            is_last = index == total_events
-            yield cls(event, parent=displayable_root, is_last=is_last)
+        # Legacy events without positions retain their placement before child calls.
+        # Positions beyond the available calls go last (e.g. after filtering calls).
+        events_by_position: dict[int, list[EventNode]] = defaultdict(list)
+        for event in root.events:
+            position = min(event.position or 0, len(root.calls))
+            events_by_position[position].append(event)
 
-        # Handle calls (and calls of calls).
-        total_calls = len(root.calls)
-        for index, child_node in enumerate(root.calls, start=1):
-            is_last = index == total_calls
+        children: list[CallTreeNode | EventNode] = []
+        for position in range(len(root.calls) + 1):
+            children.extend(events_by_position[position])
+            if position < len(root.calls):
+                children.append(root.calls[position])
+
+        for index, child_node in enumerate(children, start=1):
+            is_last = index == len(children)
             # NOTE: `.make_tree()` will handle calls of calls (recursion).
             yield from cls.make_tree(child_node, parent=displayable_root, is_last=is_last)
 
