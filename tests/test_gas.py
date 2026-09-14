@@ -1,3 +1,4 @@
+import pytest
 from eth_pydantic_types import HexBytes
 
 from evm_trace import CallTreeNode
@@ -53,3 +54,23 @@ def test_merge_single_report():
 
 def test_merge_no_reports():
     assert merge_reports() == {}
+
+
+@pytest.mark.parametrize("cost,expected", [(None, []), (0, [0]), (7, [7])])
+def test_gas_samples_distinguish_zero_from_unknown(cost, expected):
+    tree = CallTreeNode(call_type="CALL", address=CONTRACT_A, calldata=METHOD_A, gas_cost=cost)
+    assert get_gas_report(tree)[CONTRACT_A][METHOD_A] == expected
+
+
+def test_zero_gas_samples_survive_nested_report_merging():
+    tree = CallTreeNode(
+        call_type="CALL",
+        address=CONTRACT_A,
+        calldata=METHOD_A,
+        gas_cost=10,
+        calls=[
+            CallTreeNode(call_type="CALL", address=CONTRACT_A, calldata=METHOD_A, gas_cost=cost)
+            for cost in (0, None, 5)
+        ],
+    )
+    assert get_gas_report(tree)[CONTRACT_A][METHOD_A] == [10, 0, 5]
