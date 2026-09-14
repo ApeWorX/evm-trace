@@ -6,36 +6,29 @@ from evm_trace.base import BaseModel, CallTreeNode
 from evm_trace.enums import CallType
 
 
-class CallAction(BaseModel):
+class _ValueAction(BaseModel):
     gas: int
     """
     The amount of gas available for the action.
     """
 
+    value: int
+
+    @field_validator("value", "gas", mode="before")
+    def convert_integer(cls, v):
+        return int(v, 16) if isinstance(v, str) else v
+
+
+class CallAction(_ValueAction):
     input: str | None = None
     receiver: str | None = Field(alias="to", default=None)
     sender: str = Field(alias="from")
-    value: int
     # only used to recover the specific call type
     call_type: str = Field(alias="callType", repr=False)
 
-    @field_validator("value", "gas", mode="before")
-    def convert_integer(cls, v):
-        return int(v, 16)
 
-
-class CreateAction(BaseModel):
-    gas: int
-    """
-    The amount of gas available for the action.
-    """
-
+class CreateAction(_ValueAction):
     init: str
-    value: int
-
-    @field_validator("value", "gas", mode="before")
-    def convert_integer(cls, v):
-        return int(v, 16)
 
 
 class SelfDestructAction(BaseModel):
@@ -89,12 +82,12 @@ ParityTraceResult = CallResult | CreateResult
 class ParityTrace(BaseModel):
     error: str | None = None
     action: ParityTraceAction
-    block_hash: str = Field(alias="blockHash")
+    block_hash: str | None = Field(alias="blockHash", default=None)
     call_type: CallType = Field(alias="type")
     result: ParityTraceResult | None = None
     subtraces: int
     trace_address: list[int] = Field(alias="traceAddress")
-    transaction_hash: str = Field(alias="transactionHash")
+    transaction_hash: str | None = Field(alias="transactionHash", default=None)
 
     @field_validator("call_type", mode="before")
     def convert_call_type(cls, value, info) -> CallType:
@@ -136,9 +129,10 @@ def get_calltree_from_parity_trace(
     node_kwargs: dict[Any, Any] = {
         "call_type": root.call_type,
         "failed": failed,
+        "depth": len(root.trace_address),
     }
 
-    if root.call_type == CallType.CREATE:
+    if root.call_type in (CallType.CREATE, CallType.CREATE2):
         create_action: CreateAction = cast(CreateAction, root.action)
         create_result: CreateResult | None = (
             cast(CreateResult, root.result) if root.result is not None else None
@@ -149,7 +143,11 @@ def get_calltree_from_parity_trace(
             calldata=create_action.init,
         )
         if create_result:
-            node_kwargs.update(gas_cost=create_result.gas_used, address=create_result.address)
+            node_kwargs.update(
+                gas_cost=create_result.gas_used,
+                address=create_result.address,
+                returndata=create_result.code,
+            )
 
     elif root.call_type in (
         CallType.CALL,

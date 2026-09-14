@@ -80,6 +80,29 @@ from evm_trace import get_calltree_from_parity_trace
 tree = get_calltree_from_parity_trace(trace_list)
 ```
 
+### Compressed VM Traces
+
+Some clients support `trace_replayTransaction` with `["vmTrace"]`. This is an opcode trace containing stack and memory deltas, distinct from the Parity call tree above:
+
+```python
+from evm_trace.vmtrace import from_rpc_response, to_trace_frames
+
+# response_bytes is the complete JSON-RPC response, encoded as bytes.
+vm_trace = from_rpc_response(response_bytes)
+for frame in to_trace_frames(vm_trace, address=transaction_to):
+    print(frame.pc, frame.op, frame.stack)
+```
+
+`op` and `idx` are optional client extensions. The converter can recover opcode names from `code` and `pc`, reconstruct Cancun stack effects and memory expansion, and replay `DUP`, `SWAP`, and `MCOPY` directly. Memory snapshots are taken **before** the current instruction expands or writes memory, matching modern Geth struct logs. This changes the older converter's expansion timing.
+
+Recovered opcode names use Geth spelling (`KECCAK256` for `0x20`, `DIFFICULTY` for `0x44`). The trace does not identify the fork, so `0x44` cannot distinguish pre-Merge difficulty from post-Merge randomness. Explicit names supplied by the client are preserved.
+
+`frame.address` identifies the execution context: `DELEGATECALL` and `CALLCODE` retain their caller's context, while successful CREATE operations use the returned address. Failed creation addresses are unavailable. `copy_memory=False` yields a mutable `memoryview`; consume it immediately.
+
+These synthetic frames do not expose gas/refund/error fields, and `storage` contains only the storage deltas reported so far in that call. They are not a complete Geth `TraceFrame` substitute. Client output can also be incomplete; see the [upstream Reth fixes](https://github.com/paradigmxyz/reth/pull/27213). Missing bytecode (when opcode names are absent) and missing CALL/CREATE result pushes raise `evm_trace.vmtrace.IncompleteTraceError`, a `ValueError` subclass. Other missing or incorrect client data may still produce incorrect frames.
+
+For call-tree reconstruction, struct logs need memory enabled to recover calldata, initcode, events, and return values. If a call has no opcode frames (for example a precompile), enable return-data capture as well; without it the full returned bytes cannot be recovered from the truncated output-memory copy. `LOG0` events have no topics and their `selector` is `None`.
+
 ### Gas Reports
 
 If you are using a node that supports creating traces, you can get a gas report.

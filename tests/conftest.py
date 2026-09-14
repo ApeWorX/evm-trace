@@ -1,3 +1,4 @@
+import gzip
 import json
 from pathlib import Path
 
@@ -95,3 +96,69 @@ def geth_create2_struct_logs():
 def geth_create2_trace_frames(geth_create2_struct_logs):
     # NOTE: These frames won't have the CREATE address set.
     return [TraceFrame(**x) for x in geth_create2_struct_logs]
+
+
+# Recorded trace cases are loaded only when a test requests them.
+@pytest.fixture(scope="session")
+def reth_trace_cases():
+    return json.loads((DATA_PATH / "vmtrace/reth.json").read_text())["cases"]
+
+
+@pytest.fixture(
+    params=[
+        "mstore",
+        "mload_expansion",
+        "sha3_expansion",
+        "return_expansion",
+        "revert_expansion",
+        "log0",
+        "log2",
+        "mcopy",
+        "transient",
+        "blobhash",
+        "push0_dup_swap",
+        "storage",
+        "sload_existing",
+        "invalid",
+        "underflow_call",
+        "underflow_add",
+        "out_of_gas_memory",
+        "call",
+        "delegatecall",
+        "delegatecall_value",
+        "callcode",
+        "staticcall",
+        "eoa_then_contract",
+        "precompile_then_contract",
+        "failed_child_then_contract",
+        "invalid_child_then_contract",
+        "nested_siblings",
+        "create",
+        "create2",
+        "create_success",
+        "consecutive_create",
+        "create_return_code",
+        "create2_return_code",
+    ]
+)
+def trace_case(request, reth_trace_cases):
+    return request.param, reth_trace_cases[request.param]
+
+
+@pytest.fixture(scope="session")
+def mainnet_trace_cases():
+    return json.loads(gzip.decompress((DATA_PATH / "vmtrace/mainnet.json.gz").read_bytes()))[
+        "transactions"
+    ]
+
+
+@pytest.fixture(
+    params=[
+        "0x4893b62e0fc82f4487feb18e6c75d0eebae8dfb3a2e4c64abf7c80b3667c6935",
+        "0x6e5839ccc3d278edc1e4bef2f829e89957855973cb9804e6e2e2166ea6583094",
+        "0xe004f5ae399484baafc18e52ad119667bef7998e7d5a7711b7ec28856f1d4365",
+        "0x8adc58bf2cac357bee014c5099860824796dd92d44efdc3fd0753b88665e1fb1",
+    ]
+)
+def mainnet_trace_case(request, mainnet_trace_cases):
+    return mainnet_trace_cases[request.param]

@@ -29,15 +29,15 @@ class EventNode(BaseModel):
     depth: int
     """The depth in a call-tree where the event took place."""
 
-    topics: list[HexBytes] = Field(min_length=1)
-    """Event topics, including the selector."""
+    topics: list[HexBytes] = Field(default_factory=list)
+    """Event topics."""
 
     @property
-    def selector(self) -> HexBytes:
+    def selector(self) -> HexBytes | None:
         """
-        The selector is always the first topic.
+        The first topic, or None when there are no topics.
         """
-        return self.topics[0]
+        return self.topics[0] if self.topics else None
 
 
 class CallTreeNode(BaseModel):

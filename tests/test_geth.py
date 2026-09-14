@@ -1,3 +1,4 @@
+import copy
 import re
 
 import pytest
@@ -9,10 +10,14 @@ from pydantic import ValidationError
 from evm_trace.enums import CallType
 from evm_trace.geth import (
     TraceFrame,
+    _FrameIterator,
     create_trace_frames,
+    extract_memory,
     get_calltree_from_geth_call_trace,
     get_calltree_from_geth_trace,
 )
+
+from .trace_helpers import semantic_tree
 
 
 class TestTraceFrame:
@@ -247,3 +252,179 @@ def test_create_trace_frames_from_geth_create2_struct_logs(
             create2_found = create2_found or frame.op == "CREATE2"
 
     assert create2_found
+
+
+def test_structlogs_match_call_tracer(trace_case):
+    _, case = trace_case
+    actual = get_calltree_from_geth_trace(
+        create_trace_frames(case["geth"]["structLogs"]),
+        address=case["call"]["to"],
+        value=case["call"].get("value", 0),
+    )
+    expected = get_calltree_from_geth_call_trace(case["call_tracer"])
+    assert semantic_tree(actual) == semantic_tree(expected)
+
+
+def test_call_tracer_input_is_not_mutated(reth_trace_cases):
+    raw = copy.deepcopy(reth_trace_cases["failed_child_then_contract"]["call_tracer"])
+    original = copy.deepcopy(raw)
+    first = get_calltree_from_geth_call_trace(raw)
+    second = get_calltree_from_geth_call_trace(raw)
+    assert raw == original
+    assert first == second
+    assert first.calls[0].failed
+
+
+def test_log0_has_no_selector(reth_trace_cases):
+    node = get_calltree_from_geth_trace(
+        create_trace_frames(reth_trace_cases["log0"]["geth"]["structLogs"])
+    )
+    event = node.events[0]
+    assert event.topics == []
+    assert event.selector is None
+    assert event.data == bytes(32)
+    assert str(node) == "CALL\n└── EVENT: None"
+
+
+def test_short_address_is_left_padded(reth_trace_cases):
+    frame = next(
+        frame
+        for frame in create_trace_frames(reth_trace_cases["call"]["geth"]["structLogs"])
+        if frame.op == "CALL"
+    )
+    assert frame.address == bytes.fromhex("0000000000000000000000000000000000001002")
+
+
+def test_consecutive_create_addresses_resolve_at_first_resumed_frame(reth_trace_cases):
+    case = reth_trace_cases["consecutive_create"]
+    frames = list(create_trace_frames(case["geth"]["structLogs"]))
+    creates = [frame for frame in frames if frame.op == "CREATE"]
+    assert [frame.address.hex() for frame in creates] == [
+        child["to"][2:] for child in case["call_tracer"]["calls"]
+    ]
+    assert len(frames) == len(case["geth"]["structLogs"])
+
+
+def test_memory_reads_use_integer_offsets_and_zero_fill():
+    assert extract_memory(HexBytes(2**255), HexBytes(0), []) == b""
+    assert extract_memory(HexBytes(2**255), HexBytes(3), []) == bytes(3)
+    assert extract_memory(HexBytes(31), HexBytes(3), [HexBytes(b"a" * 32)]) == b"a\x00\x00"
+
+
+def test_precompile_output_uses_return_data_not_padded_memory(reth_trace_cases):
+    raw = copy.deepcopy(reth_trace_cases["precompile_then_contract"]["geth"]["structLogs"])
+    call_index = next(i for i, frame in enumerate(raw) if frame["op"] == "CALL")
+    raw[call_index + 1]["returnData"] = "0xab"
+    node = get_calltree_from_geth_trace(TraceFrame(**frame) for frame in raw)
+    assert node.calls[0].returndata == b"\xab"
+
+
+@pytest.mark.parametrize("failed", [False, True])
+def test_revert_overrides_explicit_success(failed):
+    frames = create_trace_frames(
+        [{"pc": 0, "op": "REVERT", "gas": 100, "gasCost": 0, "depth": 1, "stack": ["0x0", "0x0"]}]
+    )
+    assert get_calltree_from_geth_trace(frames, failed=failed).failed
+
+
+def test_return_preserves_explicit_failure():
+    frames = create_trace_frames(
+        [{"pc": 0, "op": "RETURN", "gas": 100, "gasCost": 0, "depth": 1, "stack": ["0x0", "0x0"]}]
+    )
+    assert get_calltree_from_geth_trace(frames, failed=True).failed
+
+
+def test_unknown_geth_opcode_marks_failure():
+    frames = create_trace_frames(
+        [{"pc": 0, "op": "opcode 0xc not defined", "gas": 100, "gasCost": 0, "depth": 1}]
+    )
+    assert get_calltree_from_geth_trace(frames).failed
+
+
+def test_empty_frame_iterator():
+    frames = _FrameIterator(iter(()))
+    assert frames.next_frame is None
+    with pytest.raises(StopIteration):
+        frames.pop()
+
+
+@pytest.mark.parametrize("opcode", ["CREATE", "CREATE2"])
+def test_failed_create_address_is_unknown(opcode):
+    frames = create_trace_frames(
+        [
+            {
+                "pc": 0,
+                "op": opcode,
+                "gas": 100,
+                "gasCost": 0,
+                "depth": 1,
+                "stack": ["0x0"] * (4 if opcode == "CREATE2" else 3),
+            },
+            {"pc": 1, "op": "STOP", "gas": 100, "gasCost": 0, "depth": 1, "stack": ["0x0"]},
+        ]
+    )
+    child = get_calltree_from_geth_trace(frames).calls[0]
+    assert child.failed
+    assert child.address == b""
+
+
+@pytest.mark.parametrize("call_type", [CallType.CREATE, "CREATE2"])
+def test_legacy_root_call_type_alias(call_type):
+    node = get_calltree_from_geth_trace(iter(()), callType=call_type)
+    assert node.call_type == call_type
+
+
+def test_legacy_root_call_type_alias_takes_precedence():
+    node = get_calltree_from_geth_trace(iter(()), callType="CREATE", call_type=CallType.CALL)
+    assert node.call_type == CallType.CREATE
+
+
+@pytest.mark.parametrize("opcode", ["CREATE", "CREATE2"])
+@pytest.mark.parametrize(
+    "exit_opcode,result,expected_output",
+    [("RETURN", "0x0", b""), ("RETURN", "0x1002", b"\xef"), ("REVERT", "0x0", b"\xef")],
+)
+def test_creation_output_after_code_deposit(opcode, exit_opcode, result, expected_output):
+    # A zero creation result after a successful RETURN means code validation/deposit failed.
+    # Live examples: forbidden 0xef prefix, code-deposit OOG, and code-size limit.
+    # Initcode: MSTORE8(0, 0xef); RETURN(0, 1), or REVERT(0, 1).
+    initcode = bytes.fromhex("60ef60005360016000" + ("f3" if exit_opcode == "RETURN" else "fd"))
+    frames = create_trace_frames(
+        [
+            {
+                "pc": 0,
+                "op": opcode,
+                "gas": 100000,
+                "gasCost": 32000,
+                "depth": 1,
+                "stack": (["0x0"] if opcode == "CREATE2" else []) + ["0xa", "0x0", "0x0"],
+                "memory": [initcode.ljust(32, b"\x00")],
+            },
+            {
+                "pc": 9,
+                "op": exit_opcode,
+                "gas": 100,
+                "gasCost": 0,
+                "depth": 2,
+                "stack": ["0x1", "0x0"],
+                "memory": [b"\xef" + bytes(31)],
+            },
+            {"pc": 1, "op": "STOP", "gas": 100, "gasCost": 0, "depth": 1, "stack": [result]},
+        ]
+    )
+    child = get_calltree_from_geth_trace(frames).calls[0]
+    assert child.failed == (result == "0x0")
+    assert child.calldata == initcode
+    assert child.returndata == expected_output
+
+
+@pytest.mark.parametrize("depth,expected", [(2, 2), ("0x2", 2), (None, 0)])
+def test_root_depth_is_normalized_before_building_children(reth_trace_cases, depth, expected):
+    case = reth_trace_cases["nested_siblings"]
+    node = get_calltree_from_geth_trace(
+        create_trace_frames(case["geth"]["structLogs"]), depth=depth
+    )
+    assert node.depth == expected
+    assert node.calls[0].depth == expected + 1
+    assert node.calls[0].calls[0].depth == expected + 2
+    assert node.calls[1].depth == expected + 1
