@@ -1,14 +1,20 @@
-on: push
+name: PR Title
 
-name: Commit Message
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
 
-# NOTE: Skip check on PR so as not to confuse contributors
-# NOTE: Also install a PR title checker so we don't mess up merges
 jobs:
-  commit-msg:
+  check:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+
     steps:
-      - name: Conventional Commitlint
-        uses: opensource-nepal/commitlint@v1
+    - uses: astral-sh/setup-uv@v7
+
+    - name: Check PR Title
+      env:
+        PR_TITLE: ${{ github.event.pull_request.title }}
+      run: uvx commitlint "$PR_TITLE"
