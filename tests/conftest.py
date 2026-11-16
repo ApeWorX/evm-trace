@@ -98,6 +98,14 @@ def geth_create2_trace_frames(geth_create2_struct_logs):
     return [TraceFrame(**x) for x in geth_create2_struct_logs]
 
 
+@pytest.fixture(scope="session")
+def permit2_deploy_struct_logs():
+    """
+    Struct logs of mainnet tx `0xf2f1fe96c16ee674bb7fcee166be52465a418927d124f5f1d231b36eae65d377`.
+    """
+    return json.loads((GETH_DATA / "permit2_deploy_structlogs.json").read_text(encoding="utf8"))
+
+
 # Recorded trace cases are loaded only when a test requests them.
 @pytest.fixture(scope="session")
 def reth_trace_cases():
