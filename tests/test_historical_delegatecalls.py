@@ -52,6 +52,8 @@ def test_historical_structlog_delegatecalls(historical_case):
     nodes = list(walk(struct_tree))
     assert len(nodes) == expected_calls
     assert sum(node.call_type == "DELEGATECALL" for node in nodes) == expected_delegatecalls
+    assert not any(node.calldata for node in nodes[1:])
+    assert not any(node.returndata for node in nodes)
 
 
 def test_historical_parity_delegatecalls(historical_case):
