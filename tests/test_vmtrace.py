@@ -86,19 +86,29 @@ def test_vmtrace_call_context(opcode):
     target = "0xff" + "00" * 29 + "1002"
     values = ["0x0"] * (5 if opcode in ("f1", "f2") else 4) + [target, "0xff"]
     ops = [dict(operation(i, [value]), op="PUSH32") for i, value in enumerate(values)]
-    child = {"code": "0x00", "ops": [operation(0)]}
+    sstore = operation(2)
+    sstore["ex"]["store"] = {"key": "0x1", "val": "0x2"}
+    child_ops = [
+        dict(operation(0, ["0x2"]), op="PUSH1"),
+        dict(operation(1, ["0x1"]), op="PUSH1"),
+        dict(sstore, op="SSTORE"),
+        dict(operation(3), op="STOP"),
+    ]
     ops.append(
         dict(
-            operation(len(values), ["0x1"], sub=child),
+            operation(len(values), ["0x1"], sub={"code": "0x", "ops": child_ops}),
             op={"f1": "CALL", "f2": "CALLCODE", "f4": "DELEGATECALL", "fa": "STATICCALL"}[opcode],
         )
     )
+    ops.append(dict(operation(len(values) + 1), op="STOP"))
     root = "0x0000000000000000000000000000000000001001"
-    frames = list(to_trace_frames(decode("0x", ops), address=root))
-    assert frames[-1].depth == 2
-    assert frames[-1].address.lower() == (
-        root if opcode in ("f2", "f4") else "0x0000000000000000000000000000000000001002"
+    *_, child_stop, parent_stop = to_trace_frames(decode("0x", ops), address=root)
+    shares_storage = opcode in ("f2", "f4")
+    assert child_stop.depth == 2
+    assert child_stop.address.lower() == (
+        root if shares_storage else "0x0000000000000000000000000000000000001002"
     )
+    assert parent_stop.storage == ({1: 2} if shares_storage else {})
 
 
 def test_vmtrace_failed_opcode_does_not_read_missing_stack():

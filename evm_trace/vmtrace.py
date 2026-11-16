@@ -126,12 +126,22 @@ def to_trace_frames(
         replacement for Geth-style traces. also contains the address of the current contract
         context.
     """
+    yield from _replay_trace_frames(trace, depth, address, copy_memory, {})
+
+
+def _replay_trace_frames(
+    trace: VMTrace | None,
+    depth: int,
+    address: str,
+    copy_memory: bool,
+    storage_by_address: dict[str, dict[int, int]],
+) -> Iterator[VMTraceFrame]:
     if trace is None:
         return
 
     memory = Memory()
     stack = Stack()
-    storage: dict[int, int] = {}
+    storage = storage_by_address.setdefault(address.lower(), {}) if address else {}
     read_memory = memory.read_bytes if copy_memory else memory.read
 
     for op in trace.ops:
@@ -174,8 +184,8 @@ def to_trace_frames(
                 call_address = Address.__eth_pydantic_validate__(created)
 
         if op.sub:
-            yield from to_trace_frames(
-                op.sub, depth=depth + 1, address=call_address, copy_memory=copy_memory
+            yield from _replay_trace_frames(
+                op.sub, depth + 1, call_address, copy_memory, storage_by_address
             )
 
         if op.ex:
