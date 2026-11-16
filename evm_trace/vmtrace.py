@@ -24,11 +24,11 @@ POP_OPCODES = {
 # fmt: on
 POPCODES = {op: n for n, opcodes in POP_OPCODES.items() for op in opcodes}
 POPCODES.update({f"LOG{n}": n + 2 for n in range(0, 5)})
-POPCODES.update(TLOAD=1, TSTORE=2, MCOPY=3, BLOBHASH=1)
+POPCODES.update(TLOAD=1, TSTORE=2, MCOPY=3, BLOBHASH=1, CLZ=1)
 OPCODE_NAMES = {value: name for name, value in vars(opcode_values).items() if name.isupper()}
 # Match Geth's opcode spelling. vmTrace has no fork context to distinguish 0x44's meaning.
 # Explicit client names (including SHA3 and PREVRANDAO) are preserved.
-OPCODE_NAMES.update({0x20: "KECCAK256", 0x44: "DIFFICULTY", 0xFE: "INVALID"})
+OPCODE_NAMES.update({0x1E: "CLZ", 0x20: "KECCAK256", 0x44: "DIFFICULTY", 0xFE: "INVALID"})
 
 
 class IncompleteTraceError(ValueError):
