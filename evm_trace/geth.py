@@ -20,6 +20,7 @@ class TraceMemory(RootModel[list[HexBytes] | None]):
     """Memory words, or None when the tracer did not capture memory."""
 
     def get(self, offset: HexBytes, size: HexBytes):
+        # Uncaptured memory has unknown contents, not zeros.
         if self.root is None:
             return HexBytes(b"")
 
