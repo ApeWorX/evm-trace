@@ -1,3 +1,5 @@
+import copy
+
 import pytest
 from eth_pydantic_types import HexBytes
 
@@ -38,12 +40,14 @@ def test_get_gas_report(call_tree_data):
 
 
 def test_merge_reports():
-    merged = merge_reports(*reports)
+    original_reports = copy.deepcopy(reports)
+    merged = merge_reports(*reports, reports[1])
     assert merged == {
-        CONTRACT_A: {METHOD_A: [100, 101, 100, 102, 105, 106]},
-        CONTRACT_B: {METHOD_A: [200, 201], METHOD_B: [200, 202, 202, 200, 200]},
-        CONTRACT_C: {METHOD_C: [300]},
+        CONTRACT_A: {METHOD_A: [100, 101, 100, 102, 105, 106, 105, 106]},
+        CONTRACT_B: {METHOD_A: [200, 201, 200, 201], METHOD_B: [200, 202, 202, 200, 200]},
+        CONTRACT_C: {METHOD_C: [300, 300]},
     }
+    assert reports == original_reports
 
 
 def test_merge_single_report():
