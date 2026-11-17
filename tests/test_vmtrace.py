@@ -41,9 +41,10 @@ def test_vmtrace_decodes_without_erigon_extensions():
         ("5d", [42, 0], [], [7]),
         ("49", [0], ["0x0"], [7, 0]),
         ("5e", [1, 0, 32], [], [7]),
+        ("1e", [1], ["0xff"], [7, 255]),
     ],
 )
-def test_cancun_stack_effects(opcode, arguments, push, expected):
+def test_to_trace_frames_stack_effects(opcode, arguments, push, expected):
     values = [7, *arguments]
     code = "".join(f"60{value:02x}" for value in values) + opcode + "00"
     ops = [operation(2 * i, [hex(value)]) for i, value in enumerate(values)]
