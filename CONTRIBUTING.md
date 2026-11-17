@@ -22,7 +22,7 @@ uv run --no-sync mdformat --check README.md CONTRIBUTING.md tests/data/geth/hist
 uv build
 ```
 
-The `style`, `lint`, and `test` dependency groups also support smaller environments for individual CI jobs. They are development groups, not installable package extras. `uv.lock` is local and ignored; run `uv sync --upgrade --group dev` to refresh dependencies when needed.
+The `lint` and `test` dependency groups also support smaller environments for individual CI jobs. They are development groups, not installable package extras. `uv.lock` is local and ignored; run `uv sync --upgrade --group dev` to refresh dependencies when needed.
 
 ## Pre-Commit Hooks
 
@@ -35,8 +35,7 @@ Install `pre-commit` locally from the root folder:
 uv run --no-sync pre-commit install --hook-type pre-commit --hook-type commit-msg
 ```
 
-Committing will now automatically run the local hooks and ensure that your commit passes all lint checks.
-Ruff, mypy, and mdformat hooks use the tools from the uv development environment, so they share the project's dependency constraints and installed dependencies. After changing dependency groups, run `uv sync --group dev` before committing.
+Committing will now automatically run the hooks and ensure that your commit passes all lint checks.
 
 ## Pull Requests
 

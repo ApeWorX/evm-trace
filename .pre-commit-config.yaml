@@ -4,35 +4,31 @@ repos:
     hooks:
     -   id: check-yaml
 
--   repo: local
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.5
     hooks:
-    -   id: ruff
-        name: Ruff lint
-        entry: uv run --no-sync ruff check --fix --exit-non-zero-on-fix
-        language: system
-        types_or: [python, pyi]
-    -   id: ruff-format
-        name: Ruff format
-        entry: uv run --no-sync ruff format
-        language: system
-        types_or: [python, pyi]
-    -   id: mypy
-        name: MyPy
-        entry: uv run --no-sync mypy .
-        language: system
-        types_or: [python, pyi]
-        pass_filenames: false
-    -   id: mdformat
-        name: Markdown format
-        entry: uv run --no-sync mdformat
-        language: system
-        types: [markdown]
+      # Run the linter
+      - id: ruff-check
+        args: [--fix]
+      # Run the formatter
+      - id: ruff-format
 
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v2.4.1
+    hooks:
+    -   id: mypy
+        additional_dependencies: [types-setuptools, pydantic]
+
+-   repo: https://github.com/executablebooks/mdformat
+    rev: 1.0.0
+    hooks:
+    -   id: mdformat
+        additional_dependencies: [mdformat-gfm, mdformat-frontmatter, mdformat-pyproject]
+
+-   repo: https://github.com/opensource-nepal/commitlint
+    rev: v1.3.0
+    hooks:
     -   id: commitlint
-        name: Conventional commit message
-        entry: uv run --no-sync commitlint --file
-        language: system
-        stages: [commit-msg]
 
 default_language_version:
     python: python3
