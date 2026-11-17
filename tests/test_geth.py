@@ -254,6 +254,17 @@ def test_create_trace_frames_from_geth_create2_struct_logs(
     assert create2_found
 
 
+def test_create_trace_frames_create2_address_with_leading_zero_bytes(permit2_deploy_struct_logs):
+    permit2 = HexBytes("0x000000000022d473030f116ddee9f6b43ac78ba3")
+    frames = list(create_trace_frames(permit2_deploy_struct_logs))
+    create2_frame = next(frame for frame in frames if frame.op == "CREATE2")
+    assert create2_frame.contract_address == permit2
+
+    tree = get_calltree_from_geth_trace(iter(frames))
+    assert tree.calls[0].call_type == CallType.CREATE2
+    assert tree.calls[0].address == permit2
+
+
 def test_structlogs_match_call_tracer(trace_case):
     _, case = trace_case
     actual = get_calltree_from_geth_trace(

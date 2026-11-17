@@ -63,9 +63,6 @@ def test_parity_call_tree_matches_call_tracer(trace_case):
     if name == "precompile_then_contract":
         # Reth's Parity call trace deliberately omits the zero-value precompile.
         expected["calls"].pop(0)
-    if name in ("create2", "create2_return_code"):
-        # The Parity action only says "create"; it does not identify CREATE2.
-        expected["calls"][0]["type"] = "CREATE"
     assert actual == expected
 
 

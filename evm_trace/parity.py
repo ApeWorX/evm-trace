@@ -29,6 +29,7 @@ class CallAction(_ValueAction):
 
 class CreateAction(_ValueAction):
     init: str
+    creation_method: str | None = Field(alias="creationMethod", default=None, repr=False)
 
 
 class SelfDestructAction(BaseModel):
@@ -91,8 +92,11 @@ class ParityTrace(BaseModel):
 
     @field_validator("call_type", mode="before")
     def convert_call_type(cls, value, info) -> CallType:
-        if isinstance(info.data["action"], CallAction):
-            value = info.data["action"].call_type
+        action = info.data["action"]
+        if isinstance(action, CallAction):
+            value = action.call_type
+        elif isinstance(action, CreateAction) and action.creation_method:
+            value = action.creation_method
 
         value = value.upper()
         if value == "SUICIDE":
