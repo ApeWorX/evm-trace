@@ -15,10 +15,15 @@ def _stack_address(value: HexBytes) -> HexBytes20:
     return HexBytes20.__eth_pydantic_validate__(value[-20:].rjust(20, b"\x00"))
 
 
-class TraceMemory(RootModel[list[HexBytes]]):
-    root: list[HexBytes] = []
+class TraceMemory(RootModel[list[HexBytes] | None]):
+    root: list[HexBytes] | None = None
+    """Memory words, or None when the tracer did not capture memory."""
 
     def get(self, offset: HexBytes, size: HexBytes):
+        # Uncaptured memory has unknown contents, not zeros.
+        if self.root is None:
+            return HexBytes(b"")
+
         return extract_memory(offset, size, self.root)
 
 
